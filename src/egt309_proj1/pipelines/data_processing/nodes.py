@@ -1,68 +1,39 @@
 import pandas as pd
+from pyspark.sql import Column
+from pyspark.sql import DataFrame as SparkDataFrame
+from pyspark.sql.functions import regexp_replace
+from pyspark.sql.types import IntegerType
 
-
-def _is_true(x: pd.Series) -> pd.Series:
-    return x == "t"
-
-
-def _parse_percentage(x: pd.Series) -> pd.Series:
-    x = x.str.replace("%", "")
-    x = x.astype(float) / 100
-    return x
-
-
-def _parse_money(x: pd.Series) -> pd.Series:
-    x = x.str.replace("$", "").str.replace(",", "")
-    x = x.astype(float)
-    return x
-
-
-def preprocess_companies(companies: pd.DataFrame) -> pd.DataFrame:
-    """Preprocesses the data for companies.
+def preprocess_bmarket(bmarket: pd.DataFrame) -> pd.DataFrame:
+    """Preprocesses the data for bmarket.
 
     Args:
-        companies: Raw data.
+        bmarket: Raw data.
     Returns:
-        Preprocessed data, with `company_rating` converted to a float and
-        `iata_approved` converted to boolean.
+        Preprocessed data, with cleaned types and standardized columns.
     """
-    companies["iata_approved"] = _is_true(companies["iata_approved"])
-    companies["company_rating"] = _parse_percentage(companies["company_rating"])
-    return companies
+    bmarket = bmarket.withColumn("Age",regexp_replace(col("Age"), "years", "").cast(IntegerType()))
+    bmarket = bmarket.withColumn("Subscription Status",when(col("Subscription Status")=="yes",True).otherwise(False).cast("BoonleanType"()))
 
+    text_columns =["Client ID","Age","Occupation","Marital Status",
+                   "Education Level","Credit Default","Housing Loan",
+                   "Personal Loan","Contact Method","Campaign Calls",
+                   "Previous Contact Days","Subscription Status"]
+    for column in text_columns:
+        if column in bmarket.columns:
+            bmarket[column] = bmarket[column].astype(str).str.lower()
+    
+    return bmarket
 
-def preprocess_shuttles(shuttles: pd.DataFrame) -> pd.DataFrame:
-    """Preprocesses the data for shuttles.
-
+def create_model_input_table(bmarket: pd.DataFrame) -> pd.DataFrame:
+    """Create model input table from bmarket.
     Args:
-        shuttles: Raw data.
+        bmarket: Raw dataframe for bmarket dataset.
     Returns:
-        Preprocessed data, with `price` converted to a float and `d_check_complete`,
-        `moon_clearance_complete` converted to boolean.
-    """
-    shuttles["d_check_complete"] = _is_true(shuttles["d_check_complete"])
-    shuttles["moon_clearance_complete"] = _is_true(shuttles["moon_clearance_complete"])
-    shuttles["price"] = _parse_money(shuttles["price"])
-    return shuttles
-
-
-def create_model_input_table(
-    shuttles: pd.DataFrame, companies: pd.DataFrame, reviews: pd.DataFrame
-) -> pd.DataFrame:
-    """Combines all data to create a model input table.
-
-    Args:
-        shuttles: Preprocessed data for shuttles.
-        companies: Preprocessed data for companies.
-        reviews: Raw data for reviews.
-    Returns:
-        Model input table.
+        Preproessed Model input table.
 
     """
-    rated_shuttles = shuttles.merge(reviews, left_on="id", right_on="shuttle_id")
-    rated_shuttles = rated_shuttles.drop("id", axis=1)
-    model_input_table = rated_shuttles.merge(
-        companies, left_on="company_id", right_on="id"
-    )
-    model_input_table = model_input_table.dropna()
+ 
+    model_input_table = preprocess_bmarket(bmarket)
+
     return model_input_table
