@@ -1,7 +1,7 @@
 import logging
 
 import pandas as pd
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import RandomForestClassifier
 from sklearn.metrics import max_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 
@@ -23,8 +23,8 @@ def split_data(data: pd.DataFrame, parameters: dict) -> tuple:
     return X_train, X_test, y_train, y_test
 
 
-def train_model(X_train: pd.DataFrame, y_train: pd.Series) -> LinearRegression:
-    """Trains the linear regression model.
+def train_model(X_train: pd.DataFrame, y_train: pd.Series) -> RandomForestClassifier:
+    """Trains the Random Forest Classifier model.
 
     Args:
         X_train: Training data of independent features.
@@ -33,22 +33,27 @@ def train_model(X_train: pd.DataFrame, y_train: pd.Series) -> LinearRegression:
     Returns:
         Trained model.
     """
-    regressor = LinearRegression()
-    regressor.fit(X_train, y_train)
-    return regressor
+    classifier = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42,
+        max_depth=10,
+        class_weight="balanced"
+    )
+    classifier.fit(X_train, y_train)
+    return classifier
 
 
 def evaluate_model(
-    regressor: LinearRegression, X_test: pd.DataFrame, y_test: pd.Series
+    classifier : RandomForestClassifier, X_test: pd.DataFrame, y_test: pd.Series
 ) -> dict[str, float]:
     """Calculates and logs the coefficient of determination.
 
     Args:
-        regressor: Trained model.
+        classifier: Trained model.
         X_test: Testing data of independent features.
         y_test: Testing data for price.
     """
-    y_pred = regressor.predict(X_test)
+    y_pred = classifier.predict(X_test)
     score = r2_score(y_test, y_pred)
     mae = mean_absolute_error(y_test, y_pred)
     me = max_error(y_test, y_pred)
