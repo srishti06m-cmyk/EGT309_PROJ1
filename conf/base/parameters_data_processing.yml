@@ -1,0 +1,20 @@
+db_path: "data/01_raw/bmarket.db"
+
+max_age: 95
+no_contact_value: 999
+
+binary_columns:
+  - "Credit Default"
+  - "Housing Loan"
+  - "Personal Loan"
+  - "Subscription Status"
+
+category_columns:
+  - "Occupation"
+  - "Marital Status"
+  - "Education Level"
+  - "Contact Method"
+
+columns_to_drop:
+
+target_col: "Subscription Status"
