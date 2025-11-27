@@ -90,6 +90,8 @@ def evaluate_MachineLearningModels(
         X_test: Testing data of independent features.
         y_test: Testing data subscription status.
     """
+    if model_name is None:
+        model_name = type(model).__name__
 
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
