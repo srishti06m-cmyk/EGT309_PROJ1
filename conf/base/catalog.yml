@@ -1,27 +1,30 @@
-raw_bank_data:
+raw_bmarket:
   type: pandas.SQLQueryDataset
   sql: "SELECT * FROM bank_marketing"
   filepath: data/01_raw/bmarket.db
   load_args:
-    index_col: null
+    index_col: None
 
-bank_data_age_clean:
-  type: MemoryDataSet
+cleaned_age:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/cleaned_age.parquet
 
-bank_data_binary_encoded:
-  type: MemoryDataSet
+cleaned_binary:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/cleaned_binary.parquet
 
-bank_data_contact_clean:
-  type: MemoryDataSet
+cleaned_contact:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/cleaned_contact.parquet
 
-bank_data_categoricals_clean:
-  type: MemoryDataSet
+cleaned_categories:
+  type: pandas.ParquetDataset
+  filepath: data/03_primary/cleaned_categories.parquet
 
-bank_data_reduced:
-  type: MemoryDataSet
+reduced_dataset:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/reduced_dataset.parquet
 
 model_input_table:
-  type: pandas.CSVDataset
-  filepath: data/05_model_input/model_input_table.csv
-  save_args:
-    index: False
+  type: pandas.ParquetDataset
+  filepath: data/05_model_input/model_input_table.parquet
