@@ -1,7 +1,12 @@
 from kedro.pipeline import Node, Pipeline
 
-from .nodes import split_data, train_RandomForestClassifier, train_GradientBoostingClassifier, train_LogisticRegression, evaluate_MachineLearningModels
-
+from .nodes import (
+    split_data, 
+    train_RandomForestClassifier, 
+    train_GradientBoostingClassifier, 
+    train_LogisticRegression, 
+    evaluate_MachineLearningModels
+)
 
 def create_pipeline(**kwargs) -> Pipeline:
     return Pipeline(
