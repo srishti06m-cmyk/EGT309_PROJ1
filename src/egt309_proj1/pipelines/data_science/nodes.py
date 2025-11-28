@@ -5,8 +5,6 @@ from sklearn.ensemble import RandomForestClassifier , GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score,precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
-from sklearn.base import ClassifierMixin
-
 
 def split_data(data: pd.DataFrame, parameters: dict) -> tuple:
     """Splits data into features and targets training and test sets.
@@ -18,7 +16,7 @@ def split_data(data: pd.DataFrame, parameters: dict) -> tuple:
         Split data.
     """
     X = data[parameters["features"]]
-    y = data["Subsciption Status"]
+    y = data["Subscription Status"]
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=parameters["test_size"], random_state=parameters["random_state"]
     )
@@ -33,16 +31,16 @@ def train_RandomForestClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> R
         y_train: Training data for subscription status.
 
     Returns:
-        Trained model.
+        Trained rf_model.
     """
-    model = RandomForestClassifier(
+    rf_model = RandomForestClassifier(
         n_estimators=100,
         random_state=42,
         max_depth=10,
         class_weight="balanced"
     )
-    model.fit(X_train, y_train)
-    return model
+    rf_model.fit(X_train, y_train)
+    return rf_model
 
 def train_GradientBoostingClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> GradientBoostingClassifier:
     """Trains the Gradient Boosting Classifier model.
@@ -52,16 +50,16 @@ def train_GradientBoostingClassifier(X_train: pd.DataFrame, y_train: pd.Series) 
         y_train: Training data for subscription status.
 
     Returns:
-        Trained model.
+        Trained gb_model.
     """
-    model = GradientBoostingClassifier(
+    gb_model = GradientBoostingClassifier(
         n_estimators=100,
         learning_rate=0.1,
         max_depth=3,
         random_state=42
     )
-    model.fit(X_train, y_train)
-    return model
+    gb_model.fit(X_train, y_train)
+    return gb_model
 
 def train_LogisticRegression(X_train: pd.DataFrame, y_train: pd.Series) -> LogisticRegression:
     """Trains the Logistic Regression model.
@@ -71,42 +69,49 @@ def train_LogisticRegression(X_train: pd.DataFrame, y_train: pd.Series) -> Logis
         y_train: Training data for subscription status.
 
     Returns:
-        Trained model.
+        Trained lr_model.
     """
-    model = LogisticRegression(
+    lr_model = LogisticRegression(
         max_iter=1000,
         class_weight="balanced",
         random_state=42
     )
-    model.fit(X_train, y_train)
-    return model
+    lr_model.fit(X_train, y_train)
+    return lr_model
 
 def evaluate_MachineLearningModels(
-    model : ClassifierMixin, X_test: pd.DataFrame, y_test: pd.Series, model_name: str = "model") -> dict[str, float]:
-    """Evaluating Machine Learning models based on accuracy, precision, recall and F1-score.
+    rf_model, gb_model, lr_model, X_test: pd.DataFrame, y_test: pd.Series, model_name: str = "model") :
+    """Evaluating all 3 Machine Learning models based on accuracy, precision, recall and F1-score.
 
     Args:
-        classifier: Trained model.
+        classifier: Trained all 3 models.
         X_test: Testing data of independent features.
         y_test: Testing data subscription status.
     """
-    if model_name is None:
-        model_name = type(model).__name__
-
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred, average='weighted')
-    recall = recall_score(y_test, y_pred, average='weighted')
-    f1 = f1_score(y_test, y_pred, average='weighted')
-    logger = logging.getLogger(__name__)
-    logger.info("Accuracy: %.3f",model_name, accuracy)
-    logger.info("Precision: %.3f",model_name, precision)
-    logger.info("Recall: %.3f",model_name, recall)
-    logger.info("F1-score: %.3f",model_name, f1)
-    return {    
-        "model" : model_name,
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1_score": f1
+    models = {
+        "Random Forest": rf_model,
+        "Gradient Boosting": gb_model,
+        "Logistic Regression": lr_model
     }
+    results = {}
+    for model_name, model in models.items():
+        y_pred = model.predict(X_test)
+        accuracy = accuracy_score(y_test, y_pred)
+        precision = precision_score(y_test, y_pred, average='weighted')
+        recall = recall_score(y_test, y_pred, average='weighted')
+        f1 = f1_score(y_test, y_pred, average='weighted')
+        logger = logging.getLogger(_name_)
+        logger.info(f"{model_name} Accuracy: {accuracy:.3f}")
+        logger.info(f"{model_name} Precision: {precision:.3f}")
+        logger.info(f"{model_name} Recall: {recall:.3f}")   
+        logger.info(f"{model_name} F1-Score: {f1:.3f}")
+        
+        results[model_name] = {     
+            "model" : model_name,
+            "accuracy": accuracy,
+            "precision": precision,
+            "recall": recall,
+            "f1_score": f1
+        }
+    
+    return results
