@@ -20,39 +20,27 @@ def create_pipeline(**kwargs) -> Pipeline:
             Node(
                 func=train_RandomForestClassifier,
                 inputs=["X_train", "y_train"],
-                outputs="rf_model",
+                outputs="rf_model_metrics",
                 name="train_rf_model_node",
             ),
             Node(
                 func=train_GradientBoostingClassifier,
                 inputs=["X_train", "y_train"],
-                outputs="gb_model",
+                outputs="gb_model_metrics",
                 name="train_gb_model_node",
             ),
             Node(
                 func=train_LogisticRegression,
                 inputs=["X_train", "y_train"],
-                outputs="lr_model",
+                outputs="lr_model_metrics",
                 name="train_lr_model_node",
             ),
             Node(
                 func=evaluate_MachineLearningModels,
-                inputs=["rf_model", "X_test", "y_test", "params:model_options.model_name_rf"],
-                outputs="rf_model_evaluation",
-                name="evaluate_rf_model_node",
+                inputs=["rf_model","gb_model", "lr_model", "X_test", "y_test"],
+                outputs="all_models_metrics",
+                name="evaluate_all_models_node",
             ),
-            Node(
-                func=evaluate_MachineLearningModels,
-                inputs=["gb_model", "X_test", "y_test", "params:model_options.model_name_gb"],
-                outputs="gb_model_evaluation",
-                name="evaluate_gb_model_node",
-            ),
-            Node(
-                func=evaluate_MachineLearningModels,
-                inputs=["lr_model", "X_test", "y_test", "params:model_options.model_name_lr"],
-                outputs="lr_model_evaluation",
-                name="evaluate_lr_model_node",
-            ),
-         
+
         ]
     )
