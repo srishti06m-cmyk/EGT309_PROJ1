@@ -1,100 +1,95 @@
-# EGT309_PROJ1
+## Group member names + email
 
-[![Powered by Kedro](https://img.shields.io/badge/powered_by-kedro-ffc900?logo=kedro)](https://kedro.org)
+Name: Srishti Malapuram
+Email: 233106B@mymail.nyp.edu.sg
 
-## Overview
+Name:
+Email:
 
-This is your new Kedro project, which was generated using `kedro 1.0.0`.
+Name: 
+Email:
 
-Take a look at the [Kedro documentation](https://docs.kedro.org) to get started.
+## Project Overview 
 
-## Rules and guidelines
+This project focuses on the deployment of an end-to-end machine learning pipeline to predict weather or not a banking customer will subscribe to a term deposit. The given dataset contains customer details such as demographic information, financial history, age and subscription details. The goal of this project is to:
 
-In order to get the best out of the template:
+1. Clean and process raw data from a SQLite database
+2. Derive insights and visualization through EDA
+3. Perform Data processing and feature engineering based on EDA findings 
+4. Build a reliable ML pipeline using kedro 
+5. Select and Train most suitable models.
+6. Report findings and results
 
-* Don't remove any lines from the `.gitignore` file we provide
-* Make sure your results can be reproduced by following a [data engineering convention](https://docs.kedro.org/en/stable/faq/faq.html#what-is-data-engineering-convention)
-* Don't commit data to your repository
-* Don't commit any credentials or your local configuration to your repository. Keep all your credentials and local configuration in `conf/local/`
+## How to run this project
 
-## How to install dependencies
+## Descrip/on of logical steps/flow of the pipeline
 
-Declare any dependencies in `requirements.txt` for `pip` installation.
+1. Data loading - This project follows the standard kedro pipeline that processed data from raw ingestion, passes the cleaned database to machine learning models and finally provides a reporting output. The pipeline paths are defined in catalog.yml.
 
-To install them, run:
+01_raw (The raw database is uploaded here.)
+   ↓
+02_intermediate (cleaning)
+   ↓
+03_primary (cleaned and structured data)
+   ↓
+04_feature (engineered features in the table)
+   ↓
+05_model_input (final ML-ready table)
+   ↓
+06_models (trained ML models)
+   ↓
+07_model_output (evaluation)
+   ↓
+08_reporting (final reports)
 
-```
-pip install -r requirements.txt
-```
+2. Data Cleaning & Standardization - The nodes.py file in the data_processing folder contains all the logic for cleaning and feature engineering. The pipelines.py file provides configuration values and parameters (from parameters_data_processing.yml) which prevents hard-coding and ensures modular, reusable codes.
 
-## How to run your Kedro pipeline
+3. Machine Learning Models - Machine learning model training is done inside the data_science pipeline. Similarly to data_processing the main ML logic resides within the nodes.py file, while model input, output, parameters and configuration are defined in pipelines.py, catalog.yml and parameters_data_science.yml. Four machine learning models are trained and evaluated.
 
-You can run your Kedro project with:
+4. Reporting & Outcomes - Final reporting and model summaries are handled under the reporting folder. This stage is used to organise the model results into readable outputs stored in the 08_reporting directory.
 
-```
-kedro run
-```
+5. Routing & Logic - All dataset paths, storage locations, and parameter settings are managed through the catalog.yml file and the othet files under conf/base/. These files contain code defining how data flows between nodes and how configurations are applied across the entire pipeline.
 
-## How to test your Kedro project
+## Overview of Key Findings from the EDA
 
-Have a look at the files `tests/test_run.py` and `tests/pipelines/data_science/test_pipeline.py` for instructions on how to write your tests. Run the tests as follows:
+The EDA revealed found several data quality issues. Age values contained text and unrealistic outliers which required cleaning and upper-bound capping. Categorical feilds showed inconsistent formatting and multiple versions of the same label. the Value 999 im "previous contact days" was confirmed to represent "no prior contact". Finally, EDA also revealed negative values under campaign calls which needed to be removed. Subscription rates were found to be imbalanced and were affected by customer attributes and factors such as age group, occupation, previous contact history and Contact method. Additional insights showed that excessive campaign calls reduced subscription likelihood while customers contacted via cellular channels were more responsive. These insights directly guided the data processing and feature engineering steps to train the ML models.
 
-```
-pytest
-```
+## How the features in the dataset were processed
 
-You can configure the coverage threshold in your project's `pyproject.toml` file under the `[tool.coverage.report]` section.
+1. Age processing 
+    - Removed text attributes such as "years" in the column 
+    - Convert values to numeric and set invalid entries to NaN 
+    - Caps max age to 95 and removes outliers such as 150\
+    - Enables both numeric age and binned age groups to be used for modeling.
 
-## Project dependencies
+2. Categorical Standerdization 
+    - Converts all categorical feilds to lowercase 
+    - removes spaces and inconsistencies 
+    - Ensures consistent formatting across all columns 
 
-To see and update the dependency requirements for your project use `requirements.txt`. You can install the project requirements with `pip install -r requirements.txt`.
+3. Previous contact days
+    - Converts columns to numeric 
+    - identifies 999 as "no previous contact"
+    - Creates a new indicator feature: Had Previous Contact (1/0).
+    - Replaces 999 with NaN in order to avoid misleading values.
 
-[Further information about project dependencies](https://docs.kedro.org/en/stable/kedro_project_setup/dependencies.html#project-specific-dependencies)
+4. Encoding
+    - Converts yes/no to to 0/1 values 
+    - applied to columns such as Housing Loan, Credit Default, etc.
 
-## How to work with Kedro and notebooks
+5. Feature Engineering
+    - Age_Group: Assigns customers to bins for easier training during ML (Youth, Young Adult, Adult, Middle Aged, Senior).
+    - Job_Type: Maps occupations into broader job categories/clusters.
+    - Loan_Count: Combines housing and personal loan indicators to show loan activity.
 
-> Note: Using `kedro jupyter` or `kedro ipython` to run your notebook provides these variables in scope: `catalog`, `context`, `pipelines` and `session`.
->
-> Jupyter, JupyterLab, and IPython are already included in the project requirements by default, so once you have run `pip install -r requirements.txt` you will not need to take any extra steps before you use them.
+6. Cleaning Invalid Numerical Values
 
-### Jupyter
-To use Jupyter notebooks in your Kedro project, you need to install Jupyter:
+    - Ensures fields such as Campaign Calls do not contain negative values.
+    - Invalid records are corrected/set to NaN.
 
-```
-pip install jupyter
-```
+7. Droping redundant fields
 
-After installing Jupyter, you can start a local notebook server:
+    - Client ID
+    - Previous Contact Days (replaced by cleaned fields)
+    - Occupation (replaced by Job_Type)
 
-```
-kedro jupyter notebook
-```
-
-### JupyterLab
-To use JupyterLab, you need to install it:
-
-```
-pip install jupyterlab
-```
-
-You can also start JupyterLab:
-
-```
-kedro jupyter lab
-```
-
-### IPython
-And if you want to run an IPython session:
-
-```
-kedro ipython
-```
-
-### How to ignore notebook output cells in `git`
-To automatically strip out all output cell contents before committing to `git`, you can use tools like [`nbstripout`](https://github.com/kynan/nbstripout). For example, you can add a hook in `.git/config` with `nbstripout --install`. This will run `nbstripout` before anything is committed to `git`.
-
-> *Note:* Your output cells will be retained locally.
-
-## Package your Kedro project
-
-[Further information about building project documentation and packaging your project](https://docs.kedro.org/en/stable/tutorial/package_a_project.html)
