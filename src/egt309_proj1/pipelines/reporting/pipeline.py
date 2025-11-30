@@ -6,7 +6,7 @@ from .nodes import (
     create_confusion_matrix,
     plot_model_metrics,
     plot_feature_importance_for_MLModels,
-    plot_roc_curve_for_MLModels,
+    plot_roc_curve_for_MLModels
 )
 
 
