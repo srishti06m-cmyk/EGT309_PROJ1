@@ -36,8 +36,26 @@ def create_pipeline(**kwargs) -> Pipeline:
                 name="train_lr_model_node",
             ),
             Node(
+                func=train_XGBClassifier,
+                inputs=["X_train", "y_train"],
+                outputs="xgb_model_metrics",
+                name="train_xgb_model_node",
+            ),
+            Node(
+                func=train_LGBMClassifier,
+                inputs=["X_train", "y_train"],
+                outputs="lgbm_model_metrics",
+                name="train_lgbm_model_node",
+            ),
+            Node(
+                func=train_CatBoostClassifier,
+                inputs=["X_train", "y_train"],
+                outputs="catboost_model_metrics",
+                name="train_catboost_model_node",
+            ),
+            Node(
                 func=evaluate_MachineLearningModels,
-                inputs=["rf_model","gb_model", "lr_model", "X_test", "y_test"],
+                inputs=["rf_model","gb_model", "lr_model", "xgb_model", "lgbm_model", "catboost_model", "X_test", "y_test"],
                 outputs="all_models_metrics",
                 name="evaluate_all_models_node",
             ),
