@@ -5,6 +5,9 @@ from .nodes import (
     train_RandomForestClassifier, 
     train_GradientBoostingClassifier, 
     train_LogisticRegression, 
+    train_XGBClassifier,
+    train_LGBMClassifier,
+    train_CatBoostClassifier,
     evaluate_MachineLearningModels
 )
 

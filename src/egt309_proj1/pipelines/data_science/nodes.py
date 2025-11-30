@@ -170,7 +170,7 @@ def evaluate_MachineLearningModels(
     """Evaluating all Machine Learning models based on accuracy, precision, recall and F1-score.
 
     Args:
-        classifier: Trained all 3 models.
+        classifier: Trained all 6 models.
         X_test: Testing data of independent features.
         y_test: Testing data subscription status.
     """

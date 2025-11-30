@@ -6,6 +6,7 @@ import plotly.graph_objs as go
 import seaborn as sn
 from pyspark.sql import DataFrame as SparkDataFrame
 from pyspark.sql import SparkSession
+from sklearn.metrics import roc_curve, auc
 
 
 # This function uses plotly.express
@@ -101,8 +102,8 @@ def plot_model_metrics(results: dict):
 
     return fig
 
-# This function plots feature importance for the 3 models
-def plot_feature_importance_for_MLModels(rf_model, gb_model, lr_model, feature_names: list):
+# This function plots feature importance for the 6 models
+def plot_feature_importance_for_MLModels(rf_model, gb_model, lr_model, xgb_model, lgbm_model, catboost_model, feature_names: list):
     matplotlib.use('Agg')
 
     fig, ax = plt.subplots(1, 3, figsize=(14, 18))
@@ -134,6 +135,75 @@ def plot_feature_importance_for_MLModels(rf_model, gb_model, lr_model, feature_n
     ax[2].set_title('Logistic Regression Feature Importance')
     ax[2].set_xlabel('Coeefficient Magnitude')
 
+    # XGBoost Feture importance
+    xgb_importances = xgb_model.feature_importances_
+    xgb_indices = xgb_importances.argsort()[::-1]
+
+    ax[3].barh([feature_names[i] for i in xgb_indices], xgb_importances[xgb_indices], align='center')
+    ax[3].invert_yaxis()
+    ax[3].set_title('XGBoost Feature Importance')
+    ax[3].set_xlabel('Importance Score')
+
+    # LightGBM Feature importance
+    lgbm_importances = lgbm_model.feature_importances_
+    lgbm_indices = lgbm_importances.argsort()[::-1]
+    
+    ax[4].barh([feature_names[i] for i in lgbm_indices], lgbm_importances[lgbm_indices], align='center')
+    ax[4].invert_yaxis()
+    ax[4].set_title('LightGBM Feature Importance')
+    ax[4].set_xlabel('Importance Score')
+
+    # CatBoost Feature importance
+    catboost_importances = catboost_model.get_feature_importance()
+    catboost_indices = catboost_importances.argsort()[::-1]
+
+    ax[5].barh([feature_names[i] for i in catboost_indices], catboost_importances[catboost_indices], align='center')
+    ax[5].invert_yaxis()
+    ax[5].set_title('CatBoost Feature Importance')
+    ax[5].set_xlabel('Importance Score')
+    
     plt.tight_layout()
     
+    return fig
+\
+# This function plots ROC curves for the 6 models
+def plot_roc_curve_for_MLModels(rf_model, gb_model, lr_model,xgb_model, lgbm_model, catboost_model, X_test, y_test):
+    matplotlib.use('Agg')
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    models = {
+    "Random Forest": rf_model,
+        "Gradient Boosting": gb_model,
+        "Logistic Regression": lr_model,
+        "XGBoost": xgb_model,
+        "LightGBM": lgbm_model,
+        "CatBoost": catboost_model
+    }
+
+    if y_test.dtype == object:
+        pos_label = 'yes'
+    else:
+        pos_label = 1
+
+    for model_name, model in models.items():
+        proba=model.predict_proba(X_test)
+        if model.classes_.dtype == object:
+            idx=list(model.classes_).index("yes")
+            y_prob = proba[:, idx]
+        else:
+            y_prob = proba[:, 1]
+        
+        fpr, tpr, _ = roc_curve(y_test, y_prob, pos_label=pos_label)
+        roc_auc = auc(fpr, tpr)
+        ax.plot(fpr, tpr, label=f'{model_name} (AUC = {roc_auc:.2f})')
+
+    ax.plot([0, 1], [0, 1], 'k--')
+    ax.set_title('ROC Curve for ML Models')
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+    ax.legend(loc='lower right')
+
+    plt.tight_layout()
+
     return fig
