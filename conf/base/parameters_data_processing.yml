@@ -1,3 +1,5 @@
+db_path: "data/01_raw/bmarket.db"
+
 age_column: "Age"
 max_age: 95
 

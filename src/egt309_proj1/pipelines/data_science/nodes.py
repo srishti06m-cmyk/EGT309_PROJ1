@@ -95,7 +95,7 @@ def compute_pos_class_weight(y: pd.Series) -> float:
     pos_class_weight = neg_count / pos_count if pos_count != 0 else 1.0
     return pos_class_weight
 
-def train_XGBClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_class_weight: float) -> XGBClassifier:
+def train_XGBClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> XGBClassifier:
     """Trains the XGBoost Classifier model.
 
     Args:
@@ -106,6 +106,8 @@ def train_XGBClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_class_wei
     Returns:
         Trained xgb_model.
     """
+    pos_class_weight = compute_pos_class_weight(y_train)
+
     xgb_model = XGBClassifier(
         n_estimators=200,
         learning_rate=0.05,
@@ -120,7 +122,7 @@ def train_XGBClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_class_wei
     xgb_model.fit(X_train, y_train)
     return xgb_model
 
-def train_LGBMClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_class_weight: float) -> LGBMClassifier:
+def train_LGBMClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> LGBMClassifier:
     """Trains the LightGBM Classifier model.
 
     Args:
@@ -131,6 +133,8 @@ def train_LGBMClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_class_we
     Returns:
         Trained lgbm_model.
     """
+    pos_class_weight = compute_pos_class_weight(y_train)
+
     lgbm_model = LGBMClassifier(
         n_estimators=200,
         learning_rate=0.05,
@@ -143,7 +147,7 @@ def train_LGBMClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_class_we
     lgbm_model.fit(X_train, y_train)
     return lgbm_model
 
-def train_CatBoostClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_class_weight: float) -> CatBoostClassifier:
+def train_CatBoostClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> CatBoostClassifier:
     """Trains the CatBoost Classifier model.
 
     Args:
@@ -154,6 +158,8 @@ def train_CatBoostClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_clas
     Returns:
         Trained catboost_model.
     """
+    pos_class_weight = compute_pos_class_weight(y_train)
+
     catboost_model = CatBoostClassifier(
         iterations=200,
         learning_rate=0.05,
@@ -166,7 +172,15 @@ def train_CatBoostClassifier(X_train: pd.DataFrame, y_train: pd.Series, pos_clas
     return catboost_model
 
 def evaluate_MachineLearningModels(
-    rf_model, gb_model, lr_model, xgb_model, lgbm_model, catboost_model, X_test: pd.DataFrame, y_test: pd.Series, model_name: str = "model") :
+    rf_model, 
+    gb_model, 
+    lr_model, 
+    xgb_model, 
+    lgbm_model, 
+    catboost_model, 
+    X_test: pd.DataFrame, 
+    y_test: pd.Series, 
+    ) -> dict:
     """Evaluating all Machine Learning models based on accuracy, precision, recall and F1-score.
 
     Args:
@@ -183,13 +197,16 @@ def evaluate_MachineLearningModels(
         "CatBoost": catboost_model
     }
     results = {}
+    logger = logging.getLogger(__name__)
+
     for model_name, model in models.items():
         y_pred = model.predict(X_test)
+
         accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred, average='weighted')
-        recall = recall_score(y_test, y_pred, average='weighted')
-        f1 = f1_score(y_test, y_pred, average='weighted')
-        logger = logging.getLogger(__name__)
+        precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
+        recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
+        f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+
         logger.info(f"{model_name} Accuracy: {accuracy:.3f}")
         logger.info(f"{model_name} Precision: {precision:.3f}")
         logger.info(f"{model_name} Recall: {recall:.3f}")   
