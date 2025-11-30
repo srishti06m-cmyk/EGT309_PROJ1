@@ -3,76 +3,155 @@ from kedro.pipeline import Pipeline, node, pipeline
 from .nodes import (
     load_raw_data,
     clean_age,
-    encode_binary_flags,
-    clean_previous_contact_days,
     standardize_categories,
+    replace_categories,
+    clean_previous_contact_days,
+    encode_binary_flags,
+    add_age_bins,
+    add_job_classification,
+    add_loan_count,
+    clean_unknown_categories,
     drop_unused_columns,
-    reorder_columns_for_model,
+    reorder_columns_for_model
 )
 
 
 def create_pipeline(**kwargs) -> Pipeline:
-    return pipeline(
-        [
-            node(
-                func=load_raw_data,
-                inputs="params:db_path",
-                outputs="raw_bank_data",
-                name="load_raw_data_node",
+    return pipeline([
+
+        #loading raw data from SQLite
+        node(
+            func=load_raw_data,
+            inputs="raw_bmarket",
+            outputs="raw_loaded",
+            name="load_raw_data_node"
+        ),
+
+        #cleaning the age column
+        node(
+            func=clean_age,
+            inputs=dict(
+                df="raw_loaded",
+                age_column="params:age_column",
+                max_age="params:max_age"
             ),
-            node(
-                func=clean_age,
-                inputs=dict(
-                    df="raw_bank_data",
-                    max_age="params:max_age",
-                ),
-                outputs="bank_data_age_clean",
-                name="clean_age_node",
+            outputs="age_cleaned",
+            name="clean_age_node"
+        ),
+
+        #standardizing text categories such as lowercase and trim
+        node(
+            func=standardize_categories,
+            inputs=dict(
+                df="age_cleaned",
+                category_columns="params:category_columns"
             ),
-            node(
-                func=encode_binary_flags,
-                inputs=dict(
-                    df="bank_data_age_clean",
-                    binary_columns="params:binary_columns",
-                ),
-                outputs="bank_data_binary_encoded",
-                name="encode_binary_flags_node",
+            outputs="categories_standardized",
+            name="standardize_categories_node"
+        ),
+
+        #replacing specific category inconsistencies such as cell = cellular etc.
+        node(
+            func=replace_categories,
+            inputs=dict(
+                df="categories_standardized",
+                replacements="params:replacement_mappings"
             ),
-            node(
-                func=clean_previous_contact_days,
-                inputs=dict(
-                    df="bank_data_binary_encoded",
-                    no_contact_value="params:no_contact_value",
-                ),
-                outputs="bank_data_contact_clean",
-                name="clean_previous_contact_days_node",
+            outputs="categories_replaced",
+            name="replace_categories_node"
+        ),
+
+        #cleaning previous contact days such as 999 = NaN and create had previous contact
+        node(
+            func=clean_previous_contact_days,
+            inputs=dict(
+                df="categories_replaced",
+                column="params:prev_contact_column",
+                no_contact_value="params:prev_contact_code"
             ),
-            node(
-                func=standardize_categories,
-                inputs=dict(
-                    df="bank_data_contact_clean",
-                    category_columns="params:category_columns",
-                ),
-                outputs="bank_data_categoricals_clean",
-                name="standardize_categories_node",
+            outputs="previous_contact_cleaned",
+            name="clean_previous_contact_node"
+        ),
+
+        #encoding binary yes/no columns (yes = 1, no = 0)
+        node(
+            func=encode_binary_flags,
+            inputs=dict(
+                df="previous_contact_cleaned",
+                binary_columns="params:binary_columns",
+                mapping="params:binary_mapping"
             ),
-            node(
-                func=drop_unused_columns,
-                inputs=dict(
-                    df="bank_data_categoricals_clean",
-                    columns_to_drop="params:columns_to_drop",
-                ),
-                outputs="bank_data_reduced",
-                name="drop_unused_columns_node",
+            outputs="binary_encoded",
+            name="encode_binary_flags_node"
+        ),
+
+        #Adding age bins (youth, adult, senior, etc.)
+        node(
+            func=add_age_bins,
+            inputs=dict(
+                df="binary_encoded",
+                age_column="params:age_column",
+                bins="params:age_bins",
+                labels="params:age_labels"
             ),
-            node(
-                func=reorder_columns_for_model,
-                inputs=dict(
-                    df="bank_data_reduced",
-                    target_col="params:target_col",
-                ),
-                outputs="model_input_table",
-                name="reorder_columns_for_model_node",
+            outputs="age_binned",
+            name="add_age_bins_node"
+        ),
+
+        #adding job classification feature (occupation = job type)
+        node(
+            func=add_job_classification,
+            inputs=dict(
+                df="age_binned",
+                occupation_column="params:occupation_column",
+                job_map="params:job_map"
             ),
-        ]
-    )
+            outputs="job_classified",
+            name="add_job_classification_node"
+        ),
+
+        #adding loan count (housing loan + personal loan)
+        node(
+            func=add_loan_count,
+            inputs=dict(
+                df="job_classified",
+                housing_col="params:housing_column",
+                personal_col="params:personal_column"
+            ),
+            outputs="loan_count_added",
+            name="add_loan_count_node"
+        ),
+
+        #removing unknown categories (unknown = no_info, illiterate = no_info)
+        node(
+            func=clean_unknown_categories,
+            inputs=dict(
+                df="loan_count_added",
+                replacements="params:category_replacements"
+            ),
+            outputs="cleaned_categories",
+            name="clean_unknown_categories_node"
+        ),
+
+        #dropping unused columns (IDs, redundant fields)
+        node(
+            func=drop_unused_columns,
+            inputs=dict(
+                df="cleaned_categories",
+                drop_cols="params:drop_columns"
+            ),
+            outputs="columns_dropped",
+            name="drop_unused_columns_node"
+        ),
+
+        #reordering columns so target is at the end for easier processing
+        node(
+            func=reorder_columns_for_model,
+            inputs=dict(
+                df="columns_dropped",
+                target_col="params:target_column"
+            ),
+            outputs="model_input_table",
+            name="reorder_columns_node"
+        )
+    ])

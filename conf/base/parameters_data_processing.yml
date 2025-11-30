@@ -1,20 +1,67 @@
-db_path: "data/01_raw/bmarket.db"
-
+age_column: "Age"
 max_age: 95
-no_contact_value: 999
-
-binary_columns:
-  - "Credit Default"
-  - "Housing Loan"
-  - "Personal Loan"
-  - "Subscription Status"
 
 category_columns:
   - "Occupation"
   - "Marital Status"
   - "Education Level"
   - "Contact Method"
+  - "Housing Loan"
+  - "Personal Loan"
+  - "Credit Default"
 
-columns_to_drop:
+replacement_mappings:
+  Contact Method:
+    cell: cellular
+    cell phone: cellular
+    telephone: telephone
+  Education Level:
+    unknown: no_info
+    illiterate: no_info
+  Occupation:
+    unknown: no_info
+  Credit Default:
+    unknown: no_info
 
-target_col: "Subscription Status"
+prev_contact_column: "Previous Contact Days"
+prev_contact_code: 999
+
+binary_columns:
+  - "Housing Loan"
+  - "Personal Loan"
+  - "Credit Default"
+binary_mapping:
+  yes: 1
+  no: 0
+  no_info: -1
+
+age_bins: [0, 25, 35, 50, 65, 120]
+age_labels: ["Youth", "Young Adult", "Adult", "Middle Aged", "Senior"]
+
+occupation_column: "Occupation"
+
+job_map:
+  admin.: white_collar
+  management: white_collar
+  technician: blue_collar
+  blue-collar: blue_collar
+  services: blue_collar
+  student: student
+  retired: retired
+  unemployed: unemployed
+  self-employed: other
+  entrepreneur: other
+  housemaid: other
+  unknown: no_info
+
+housing_column: "Housing Loan"
+personal_column: "Personal Loan"
+
+drop_columns:
+  - "Client ID"
+  - "Previous Contact Days"
+  - "Occupation"
+  - "Age_Invalid"
+  - "Temp Column"
+
+target_column: "Subscription Status"
