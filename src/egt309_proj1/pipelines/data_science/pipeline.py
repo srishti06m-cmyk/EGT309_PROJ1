@@ -23,37 +23,37 @@ def create_pipeline(**kwargs) -> Pipeline:
             Node(
                 func=train_RandomForestClassifier,
                 inputs=["X_train", "y_train"],
-                outputs="rf_model_metrics",
+                outputs="rf_model",
                 name="train_rf_model_node",
             ),
             Node(
                 func=train_GradientBoostingClassifier,
                 inputs=["X_train", "y_train"],
-                outputs="gb_model_metrics",
+                outputs="gb_model",
                 name="train_gb_model_node",
             ),
             Node(
                 func=train_LogisticRegression,
                 inputs=["X_train", "y_train"],
-                outputs="lr_model_metrics",
+                outputs="lr_model",
                 name="train_lr_model_node",
             ),
             Node(
                 func=train_XGBClassifier,
                 inputs=["X_train", "y_train"],
-                outputs="xgb_model_metrics",
+                outputs="xgb_model",
                 name="train_xgb_model_node",
             ),
             Node(
                 func=train_LGBMClassifier,
                 inputs=["X_train", "y_train"],
-                outputs="lgbm_model_metrics",
+                outputs="lgbm_model",
                 name="train_lgbm_model_node",
             ),
             Node(
                 func=train_CatBoostClassifier,
                 inputs=["X_train", "y_train"],
-                outputs="catboost_model_metrics",
+                outputs="catboost_model",
                 name="train_catboost_model_node",
             ),
             Node(

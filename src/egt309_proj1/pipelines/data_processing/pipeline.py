@@ -22,7 +22,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         #loading raw data from SQLite
         node(
             func=load_raw_data,
-            inputs="raw_bmarket",
+            inputs="params:db_path",
             outputs="raw_loaded",
             name="load_raw_data_node"
         ),

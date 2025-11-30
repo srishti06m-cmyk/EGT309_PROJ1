@@ -1,9 +1,3 @@
-raw_bmarket:
-  type: pandas.SQLQueryDataset
-  filepath: data/01_raw/bmarket.db
-  load_args:
-    query: "SELECT * FROM bank_marketing"
-
 #02_intermediate — early cleaning steps
 raw_loaded:
   type: pandas.ParquetDataset
