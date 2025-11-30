@@ -59,9 +59,7 @@ personal_column: "Personal Loan"
 
 drop_columns:
   - "Client ID"
-  - "Previous Contact Days"
   - "Occupation"
-  - "Age_Invalid"
-  - "Temp Column"
+  - "Previous Contact Days"
 
 target_column: "Subscription Status"
