@@ -3,11 +3,11 @@
 Name: Srishti Malapuram
 Email: 233106B@mymail.nyp.edu.sg
 
-Name:
-Email:
+Name: Andrew Lau Yaoneng
+Email: 233449m@mymail.nyp.edu.sg
 
-Name: 
-Email:
+Name: Amirul Haziq Bin Nor Isman
+Email: 232206S@mymail.nyp.edu.sg
 
 ## Project Overview 
 
@@ -83,13 +83,93 @@ The EDA revealed found several data quality issues. Age values contained text an
     - Loan_Count: Combines housing and personal loan indicators to show loan activity.
 
 6. Cleaning Invalid Numerical Values
-
     - Ensures fields such as Campaign Calls do not contain negative values.
     - Invalid records are corrected/set to NaN.
 
 7. Droping redundant fields
-
     - Client ID
     - Previous Contact Days (replaced by cleaned fields)
     - Occupation (replaced by Job_Type)
+
+## Explanation for choice of machine Learning Models
+
+1. Random Forest Classifier	
+- Identifies non-linear patterns in marketing practices
+- Manages categorical variables and missing values.
+- Provides feature importance (e.g., duration, past outcome) 
+
+2. Gradient Boosting Classifier	
+- High accuracy and increased robustness for imbalanced classes (no > yes).
+- Handles intricate interactions among several features. 
+- Perform well on structured datasets, similar to the bank_marketing
+
+3. Logistic Regression
+- Suitable for binary classifications (yes or no)
+- Encodes and interprets mixed category and numerical data, 
+- Highlighting key drivers such as age, job, and duration.
+	
+4. XGBoost Classifier	
+- One of the strongest boosting algorithms
+- Handles imbalanced, structured datasets well
+- Captures complex non-linear behaviours that simpler models cannot capture
+
+5. LightGBM Classifier	
+- Efficient and Lightweight
+- Strong performance and is able to handle large datasets accurately
+- Trains quickly, suitable for quick testing
+
+6. CatBoost Classifier	
+- Designed specifically to handle categorial data
+- Able to capture more complex feature interactions
+- Helps reduce overfitting, suitable for the database
+
+## Evaluations of Machine Learning Models
+
+1. Numeric Metrics
+ An evaluation node for each model computes the following metrics and stores them in a results dictionary, which is then translated into a DataFrame and plotted:
+- Accuracy
+ . Proportion of correct predictions.  
+ . This provides a general sense of performance, but should be taken with caution due to the dataset's imbalance (more "no" than "yes").
+- Precision (weighted)
+ . How many of the samples predicted for a certain class are actually in that class.
+ . Higher precision for the "yes" class means that fewer customers are incorrectly identified as possible subscribers.
+- Weighted recall 
+ . This measures the number of correctly classified samples in a class.
+ . Higher recall for the "yes" class shows that the model is identifying more true subscribers.
+- F1 score (weighted)
+ . The harmonic mean of precision and recall.
+ . This gives a single score that weighs capturing actual subscribers (recall) against avoiding too many false positives (accuracy), while enabling class imbalance.
+
+2. Visual Diagnostics.
+ In addition to scalar measurements, the reporting nodes generate many plots:
+- Confusion Matrix
+ . A heatmap was created by combining the true labels and predictions from the test dataset.
+ . It displays true positives, true negatives, false positives, and false negatives, allowing you to identify the most prevalent sorts of errors.
+- ROC Curves and AUC
+ . The ROC curve and Area Under the Curve (AUC) are calculated for each model using the anticipated probabilities.
+ . ROC-AUC assesses how well the model distinguishes between positive ("yes") and negative ("no") classes at various probability thresholds; a higher AUC indicates greater discrimination.
+
+## Other considerations for deploying the models
+
+- Consistent Data Pipeline
+ . All models require the same preprocessing steps as training (encoding, column sorting, and managing missing variables).
+ . Ensures that each model receives properly structured and consistent input.
+
+- Probability Threshold Tuning
+ . The default criterion of 0.5 may not provide an effective balance of precision and recall.
+ . Thresholds can be set across all models or tweaked individually based on business requirements (for example, decreasing false positives versus catching more actual subscribers).
+
+- Monitoring and Model Drift.
+ . Customer behaviour varies with time, and each model may decline differently.
+ . Regular monitoring with accuracy, precision, recall, F1-score, and AUC aids in detecting drift.
+ . Significant declines should result in retraining or threshold adjustments.
+
+- Multimodel Deployment Strategy
+ . Choose whether to employ a single best model, an ensemble (e.g., voting or probability averaging), or different models for each customer category.
+ . Ensures that the deployment meets performance, resource, and operational requirements.
+ 
+- Interpretability and Explainability
+ . Logistic regression yields visible coefficients.
+ . Tree-based models (Random Forest, Gradient Boosting, XGBoost, LightGBM, and CatBoost) can be explained using feature importance or SHAP values.
+ . Ensures predictions are understandable.
 
