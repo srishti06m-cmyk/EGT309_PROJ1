@@ -64,6 +64,22 @@ best_model:
   type: pickle.PickleDataset
   filepath: data/06_models/best_model.pkl
 
+X_test:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/X_test.csv
+
+y_test:
+  type: pandas.CSVDataset
+  filepath: data/05_model_input/y_test.csv
+
+y_pred:
+  type: pandas.CSVDataset
+  filepath: data/06_models/y_pred.csv
+
+trained_models:
+  type: pickle.PickleDataset
+  filepath: data/06_models/model.pkl
+
 #final model performance metrics
 evaluation_metrics:
   type: json.JSONDataset
