@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 #from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -217,11 +217,11 @@ def evaluate_models(
     - Use predict_proba / decision_function to get scores
     - Search thresholds in [0.1, 0.9]
     - Pick threshold that maximises F1
-    - Compute accuracy, F1, ROC-AUC with that threshold
+    - Compute accuracy, precision,recall, F1, ROC-AUC with that threshold
 
     Returns:
         best_model: fitted sklearn Pipeline
-        metrics: dict with per-model accuracy, F1, ROC-AUC, best_threshold
+        metrics: dict with per-model accuracy, precision, recall, F1, ROC-AUC, best_threshold
     """
     metrics: Dict[str, Dict[str, float]] = {}
     best_name = None
@@ -239,20 +239,29 @@ def evaluate_models(
         best_f1 = -1.0
         best_t = 0.5
         best_acc = 0.0
+        best_prec=0.0
+        best_rec=0.0
+
 
         for t in thresholds:
             y_pred_t = (scores >= t).astype(int)
             f1 = f1_score(y_test, y_pred_t)
             acc = accuracy_score(y_test, y_pred_t)
+            prec= precision_score(y_test, y_pred_t, )
+            rec= recall_score(y_test, y_pred_t)
             if f1 > best_f1:
                 best_f1 = f1
                 best_t = t
                 best_acc = acc
+                best_prec=prec
+                best_rec=rec
 
         roc = roc_auc_score(y_test, scores)
 
         metrics[name] = {
             "accuracy": float(best_acc),
+            "precision": float(best_prec),
+            "recall": float(best_rec),
             "f1": float(best_f1),
             "roc_auc": float(roc),
             "best_threshold": float(best_t),
