@@ -16,32 +16,32 @@ def create_pipeline(**kwargs) -> Pipeline:
         [
             Node(
                 func=compare_subscription_by_occupation,
-                inputs="load_raw_data",
+                inputs="model_input_table",
                 outputs="Comparison_Subscription_by_Occupation_plot",
             ),
             Node(
                 func=compare_subscription_by_contact_method,
-                inputs="load_raw_data",
+                inputs="model_input_table",
                 outputs="Comparison_Subscription_by_Contact_Method_plot",
             ),
             Node(
                 func=create_confusion_matrix,
-                inputs="bank_marketing",
+                inputs=["best_model", "X_test", "y_test"],
                 outputs="Models_Confusion_Matrix",
             ),
             Node(
                 func=plot_model_metrics,
-                inputs="results",
+                inputs="evaluation_metrics",
                 outputs="Model_Performance_Plots",
             ),
             Node(
                 func=plot_feature_importance_for_MLModels,
-                inputs=["rf_model", "gb_model", "lr_model", "xgb_model", "lgbm_model", "catboost_model", "feature_names"],
+                inputs="trained_models",
                 outputs="Feature_Importance_Plots_for_MLModels",
             ),
             Node(
                 func=plot_roc_curve_for_MLModels,
-                inputs=["rf_model", "gb_model", "lr_model", "xgb_model", "lgbm_model", "catboost_model", "X_test", "y_test"],
+                inputs=["trained_models","X_test","y_test"],
                 outputs="ROC_Curve_Plots_for_MLModels",
             ),
         ]
