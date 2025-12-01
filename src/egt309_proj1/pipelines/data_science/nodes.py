@@ -2,6 +2,7 @@ from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
+import matplotlib
 
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
@@ -274,3 +275,46 @@ def evaluate_models(
     best_model = trained_models[best_name]
 
     return best_model, metrics
+
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+
+def plot_model_metrics(results: dict):
+    """
+    Plot model performance metrics from evaluation_metrics.json.
+
+    Expected structure of `results`:
+        {
+          "log_reg": {
+              "accuracy": ...,
+              "f1": ...,
+              "roc_auc": ...,
+              "best_threshold": ...
+          },
+          "random_forest": { ... },
+          ...
+        }
+    """
+    matplotlib.use("Agg")
+
+    # Convert dict to DataFrame: index = model name, columns = metrics
+    model_metrics = pd.DataFrame(results).T
+
+    # Move index into a proper column for plotting labels
+    model_metrics = model_metrics.reset_index().rename(columns={"index": "model_name"})
+
+    # Keep only the metrics we actually have
+    metrics_to_plot = ["accuracy", "f1", "roc_auc"]
+    available = [m for m in metrics_to_plot if m in model_metrics.columns]
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    model_metrics.set_index("model_name")[available].plot(kind="bar", ax=ax)
+
+    ax.set_title("Model Performance Metrics")
+    ax.set_ylabel("Score")
+    ax.set_ylim(0, 1)
+    plt.tight_layout()
+
+    return fig
