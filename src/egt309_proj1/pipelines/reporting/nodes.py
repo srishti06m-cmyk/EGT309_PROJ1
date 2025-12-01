@@ -109,7 +109,7 @@ def plot_model_metrics(metrics: dict[str, dict]):
     return fig
 
 # This function plots feature importance for the 6 models
-def plot_feature_importance_for_MLModels(trained_models: Dict[str, object]):
+def plot_feature_importance_for_MLModels(trained_models: dict[str, object]):
     matplotlib.use('Agg')
 
     first_model = next(iter(trained_models.values()))
@@ -161,7 +161,7 @@ def plot_feature_importance_for_MLModels(trained_models: Dict[str, object]):
     return fig
 
 # This function plots ROC curves for the 6 models
-def plot_roc_curve_for_MLModels(trained_models:Dict[str, object], X_test, y_test):
+def plot_roc_curve_for_MLModels(trained_models: dict[str, object], X_test, y_test):
     matplotlib.use('Agg')
 
     fig, ax = plt.subplots(figsize=(8, 6))
