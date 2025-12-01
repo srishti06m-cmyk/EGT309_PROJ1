@@ -1,67 +1,32 @@
-from kedro.pipeline import Node, Pipeline
+from kedro.pipeline import Pipeline, node, pipeline
 
-from .nodes import (
-    split_data, 
-    train_RandomForestClassifier, 
-    train_GradientBoostingClassifier, 
-    train_LogisticRegression, 
-    train_XGBClassifier,
-    train_LGBMClassifier,
-    train_CatBoostClassifier,
-    evaluate_MachineLearningModels
-)
+from .nodes import split_data, train_models, evaluate_models
+
 
 def create_pipeline(**kwargs) -> Pipeline:
-    return Pipeline(
+    return pipeline(
         [
-            Node(
+            node(
                 func=split_data,
-                inputs=["model_input_table", "params:model_options"],
+                inputs=dict(
+                    df="model_input_table",
+                    test_size="params:model_test_size",
+                    random_state="params:model_random_state",
+                ),
                 outputs=["X_train", "X_test", "y_train", "y_test"],
                 name="split_data_node",
             ),
-            Node(
-                func=train_RandomForestClassifier,
+            node(
+                func=train_models,
                 inputs=["X_train", "y_train"],
-                outputs="rf_model",
-                name="train_rf_model_node",
+                outputs="trained_models",
+                name="train_models_node",
             ),
-            Node(
-                func=train_GradientBoostingClassifier,
-                inputs=["X_train", "y_train"],
-                outputs="gb_model",
-                name="train_gb_model_node",
+            node(
+                func=evaluate_models,
+                inputs=["trained_models", "X_test", "y_test"],
+                outputs=["best_model", "evaluation_metrics"],
+                name="evaluate_models_node",
             ),
-            Node(
-                func=train_LogisticRegression,
-                inputs=["X_train", "y_train"],
-                outputs="lr_model",
-                name="train_lr_model_node",
-            ),
-            Node(
-                func=train_XGBClassifier,
-                inputs=["X_train", "y_train"],
-                outputs="xgb_model",
-                name="train_xgb_model_node",
-            ),
-            Node(
-                func=train_LGBMClassifier,
-                inputs=["X_train", "y_train"],
-                outputs="lgbm_model",
-                name="train_lgbm_model_node",
-            ),
-            Node(
-                func=train_CatBoostClassifier,
-                inputs=["X_train", "y_train"],
-                outputs="catboost_model",
-                name="train_catboost_model_node",
-            ),
-            Node(
-                func=evaluate_MachineLearningModels,
-                inputs=["rf_model","gb_model", "lr_model", "xgb_model", "lgbm_model", "catboost_model", "X_test", "y_test"],
-                outputs="all_models_metrics",
-                name="evaluate_all_models_node",
-            ),
-
         ]
     )

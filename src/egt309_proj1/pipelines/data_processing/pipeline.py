@@ -6,6 +6,7 @@ from .nodes import (
     standardize_categories,
     replace_categories,
     clean_previous_contact_days,
+    clean_campaign_calls,
     encode_binary_flags,
     add_age_bins,
     add_job_classification,
@@ -72,24 +73,33 @@ def create_pipeline(**kwargs) -> Pipeline:
             outputs="previous_contact_cleaned",
             name="clean_previous_contact_node"
         ),
-
-        #encoding binary yes/no columns (yes = 1, no = 0)
+        
+        #cleaning campaign calls to absolute values
         node(
-            func=encode_binary_flags,
+            func=clean_campaign_calls,
             inputs=dict(
                 df="previous_contact_cleaned",
-                binary_columns="params:binary_columns",
-                mapping="params:binary_mapping"
+                column="params:campaign_calls_column"
             ),
-            outputs="binary_encoded",
-            name="encode_binary_flags_node"
+            outputs="campaign_calls_cleaned",
+            name="clean_campaign_calls_node"
+        ),
+
+       #removing unknown / unwanted categories
+        node(
+            func=clean_unknown_categories,
+            inputs=dict(
+                df="campaign_calls_cleaned",
+            ),
+            outputs="cleaned_categories",
+            name="clean_unknown_categories_node"
         ),
 
         #Adding age bins (youth, adult, senior, etc.)
         node(
             func=add_age_bins,
             inputs=dict(
-                df="binary_encoded",
+                df="cleaned_categories",
                 age_column="params:age_column",
                 bins="params:age_bins",
                 labels="params:age_labels"
@@ -122,22 +132,11 @@ def create_pipeline(**kwargs) -> Pipeline:
             name="add_loan_count_node"
         ),
 
-        #removing unknown categories (unknown = no_info, illiterate = no_info)
-        node(
-            func=clean_unknown_categories,
-            inputs=dict(
-                df="loan_count_added",
-                replacements="params:category_replacements"
-            ),
-            outputs="cleaned_categories",
-            name="clean_unknown_categories_node"
-        ),
-
         #dropping unused columns (IDs, redundant fields)
         node(
             func=drop_unused_columns,
             inputs=dict(
-                df="cleaned_categories",
+                df="loan_count_added",
                 drop_cols="params:drop_columns"
             ),
             outputs="columns_dropped",

@@ -1,10 +1,2 @@
-model_options:
-  test_size: 0.2
-  random_state: 3
-  features:
-    - "Age"
-    - "Housing Loan"
-    - "Personal Loan"
-    - "Loan_Count"
-    - "Credit Default"
-    - "Had Previous Contact"
+model_test_size: 0.2
+model_random_state: 42

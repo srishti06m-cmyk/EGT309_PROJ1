@@ -10,13 +10,16 @@ def load_raw_data(db_path: str) -> pd.DataFrame:
 #removes outliers such as 150, change text like 39 years to 39, converts to neumeric and invalid values become NaN
 def clean_age(df: pd.DataFrame, age_column: str, max_age: int) -> pd.DataFrame:
     df = df.copy()
+
     df[age_column] = (
         df[age_column].astype(str)
         .str.replace("years", "", regex=False)
         .str.strip()
     )
     df[age_column] = pd.to_numeric(df[age_column], errors="coerce")
-    df.loc[df[age_column] > max_age, age_column] = np.nan
+    df.loc[df[age_column]> max_age, age_column] = np.nan
+    median_age = df[age_column].median(skipna=True)
+    df[age_column]=df[age_column].fillna(median_age)
     return df
 
 #standerdizing categories, making everything lowercase, remove extra spaces, convert to string 
@@ -45,6 +48,12 @@ def clean_previous_contact_days(df: pd.DataFrame, column: str, no_contact_value:
     df.loc[df[column] == no_contact_value, column] = np.nan
     return df
 
+def clean_campaign_calls(df: pd.DataFrame, column: str) -> pd.DataFrame:
+    """Cleans the Campaign Calls column by converting to absolute values"""
+    df= df.copy()
+    df[column]= pd.to_numeric(df[column], errors="coerce").abs()
+    return df
+
 #convert using mapping provided, string
 def encode_binary_flags(df: pd.DataFrame, binary_columns: List[str], mapping: dict) -> pd.DataFrame:
     df = df.copy()
@@ -67,7 +76,10 @@ def add_job_classification(df: pd.DataFrame, occupation_column: str, job_map: di
 #makes loans a neumeric feature
 def add_loan_count(df: pd.DataFrame, housing_col: str, personal_col: str) -> pd.DataFrame:
     df = df.copy()
-    df["Loan_Count"] = (df[housing_col] == 1).astype(int) + (df[personal_col] == 1).astype(int)
+    df["Loan_Count"] = (
+        (df[housing_col] == "yes").astype(int)
+        + (df[personal_col] == "yes").astype(int)
+    )
     return df
 
 #Remove redundant old coloumns, remove junk, keep dataset compact
@@ -75,16 +87,39 @@ def drop_unused_columns(df: pd.DataFrame, drop_cols: List[str]) -> pd.DataFrame:
     return df.drop(columns=[c for c in drop_cols if c in df.columns])
 
 #removing unkown or rare categories 
-def clean_unknown_categories(df: pd.DataFrame, replacements: dict) -> pd.DataFrame:
+def clean_unknown_categories(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Replace unwanted categories such as 'unknown' or 'illiterate'
-    using mappings from parameters.yml.
+    Apply EDA-based rules to remove rare / low-quality categories:
+    - Drop rows where Education Level is 'unknown' or 'illiterate'
+    - Drop rows where Credit Default is 'yes'
+    - Drop rows where Housing Loan is 'unknown'
+    - Drop rows where Personal Loan is 'unknown'
+    - Fill remaining missing Housing/Personal Loan with 'no_info'
     """
     df = df.copy()
 
-    for col, mapping in replacements.items():
-        if col in df.columns:
-            df[col] = df[col].replace(mapping)
+    if "Education Level" in df.columns:
+        df = df[~df["Education Level"].isin(["unknown", "illiterate"])]
+
+    if "Marital Status" in df.columns:
+        df = df[df["Marital Status"]!="unknown"]
+
+    if "Occupation" in df.columns:
+        df = df[df["Occupation"]!="no_info"]
+
+    if "Credit Default" in df.columns:
+        df = df[df["Credit Default"] != "yes"]
+
+    if "Housing Loan" in df.columns:
+        df = df[~df["Housing Loan"].isin(["unknown"])]
+    if "Personal Loan" in df.columns:
+        df = df[~df["Personal Loan"].isin(["unknown"])]
+
+    if "Housing Loan" in df.columns:
+        df["Housing Loan"] = df["Housing Loan"].replace("none", "no_info").fillna("no_info")
+
+    if "Personal Loan" in df.columns:
+        df["Personal Loan"] = df["Personal Loan"].replace("none", "no_info").fillna("no_info")
 
     return df
 

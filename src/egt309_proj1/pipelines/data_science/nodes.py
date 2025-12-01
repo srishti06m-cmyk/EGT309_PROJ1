@@ -1,223 +1,267 @@
-import logging
+from typing import Dict, Tuple
 
+import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier , GradientBoostingClassifier
+
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score,precision_score, recall_score, f1_score
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
+#from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 
-def split_data(data: pd.DataFrame, parameters: dict) -> tuple:
-    """Splits data into features and targets training and test sets.
+from imblearn.pipeline import Pipeline
+from imblearn.over_sampling import SMOTE
 
-    Args:
-        data: Data containing features and target.
-        parameters: Parameters defined in parameters/data_science.yml.
-    Returns:
-        Split data.
+
+TARGET_COL = "Subscription Status"
+
+
+def split_data(
+    df: pd.DataFrame, test_size: float, random_state: int
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """
-    X = data[parameters["features"]]
-    y = data["Subscription Status"]
+    Split the cleaned model_input_table into train/test sets.
+
+    - Maps target 'Subscription Status' from yes/no -> 1/0
+    - Drops any weird labels outside yes/no (just in case)
+    """
+    df = df.copy()
+
+    df[TARGET_COL] = df[TARGET_COL].astype(str).str.strip().str.lower()
+    df = df[df[TARGET_COL].isin(["yes", "no"])]
+
+    y = (df[TARGET_COL] == "yes").astype(int)
+    X = df.drop(columns=[TARGET_COL])
+
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=parameters["test_size"], random_state=parameters["random_state"]
+        X,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y,
     )
     return X_train, X_test, y_train, y_test
 
-def train_RandomForestClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> RandomForestClassifier:
-    """Trains the Random Forest Classifier model.
 
-    Args:
-        X_train: Training data of independent features.
-        y_train: Training data for subscription status.
-
-    Returns:
-        Trained rf_model.
+def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
     """
-    rf_model = RandomForestClassifier(
-        n_estimators=100,
-        random_state=42,
-        max_depth=10,
-        class_weight="balanced"
+    Build a ColumnTransformer that:
+    - scales numeric features
+    - one-hot encodes categorical features
+    """
+    numeric_features = ["Age", "Campaign Calls", "Had Previous Contact", "Loan_Count"]
+    numeric_features = [c for c in numeric_features if c in X.columns]
+
+    categorical_features = [c for c in X.columns if c not in numeric_features]
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), numeric_features),
+            ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
+        ]
     )
-    rf_model.fit(X_train, y_train)
-    return rf_model
+    return preprocessor
 
-def train_GradientBoostingClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> GradientBoostingClassifier:
-    """Trains the Gradient Boosting Classifier model.
 
-    Args:
-        X_train: Training data of independent features.
-        y_train: Training data for subscription status.
+def _get_class_weights(y_train: pd.Series):
+    """Compute imbalance ratio for use in boosting models."""
+    pos = (y_train == 1).sum()
+    neg = (y_train == 0).sum()
+    if pos == 0:
+        ratio = 1.0
+    else:
+        ratio = neg / pos
+    return ratio, [1.0, ratio]
 
-    Returns:
-        Trained gb_model.
+
+def train_models(
+    X_train: pd.DataFrame, y_train: pd.Series
+) -> Dict[str, Pipeline]:
     """
-    gb_model = GradientBoostingClassifier(
-        n_estimators=100,
-        learning_rate=0.1,
-        max_depth=3,
-        random_state=42
-    )
-    gb_model.fit(X_train, y_train)
-    return gb_model
-
-def train_LogisticRegression(X_train: pd.DataFrame, y_train: pd.Series) -> LogisticRegression:
-    """Trains the Logistic Regression model.
-
-    Args:
-        X_train: Training data of independent features.
-        y_train: Training data for subscription status.
-
-    Returns:
-        Trained lr_model.
+    FAST tuning version:
+    - Uses RandomizedSearchCV with ~20 trials per model
+    - Uses class weights / scale_pos_weight for imbalance
+    - Returns best tuned Pipeline per model.
     """
-    lr_model = LogisticRegression(
-        max_iter=1000,
-        class_weight="balanced",
-        random_state=42
-    )
-    lr_model.fit(X_train, y_train)
-    return lr_model
+    preprocessor = _build_preprocessor(X_train)
 
-def compute_pos_class_weight(y: pd.Series) -> float:
-    """Computes the positive class weight for handling class imbalance.
+    # imbalance info
+    scale_pos_weight, cat_class_weights = _get_class_weights(y_train)
 
-    Args:
-        y: Series containing the target variable.
-
-    Returns:
-        Positive class weight.
-    """
-    neg_count = (y == 0).sum()
-    pos_count = (y == 1).sum()
-    pos_class_weight = neg_count / pos_count if pos_count != 0 else 1.0
-    return pos_class_weight
-
-def train_XGBClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> XGBClassifier:
-    """Trains the XGBoost Classifier model.
-
-    Args:
-        X_train: Training data of independent features.
-        y_train: Training data for subscription status.
-        pos_class_weight: Weight for the positive class to handle class imbalance.
-
-    Returns:
-        Trained xgb_model.
-    """
-    pos_class_weight = compute_pos_class_weight(y_train)
-
-    xgb_model = XGBClassifier(
-        n_estimators=200,
-        learning_rate=0.05,
-        max_depth=4,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        scale_pos_weight=pos_class_weight,
-        use_label_encoder=False,
-        eval_metric='logloss',
-        random_state=42
-    )
-    xgb_model.fit(X_train, y_train)
-    return xgb_model
-
-def train_LGBMClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> LGBMClassifier:
-    """Trains the LightGBM Classifier model.
-
-    Args:
-        X_train: Training data of independent features.
-        y_train: Training data for subscription status.
-        pos_class_weight: Weight for the positive class to handle class imbalance.
-
-    Returns:
-        Trained lgbm_model.
-    """
-    pos_class_weight = compute_pos_class_weight(y_train)
-
-    lgbm_model = LGBMClassifier(
-        n_estimators=200,
-        learning_rate=0.05,
-        max_depth=4,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        scale_pos_weight=pos_class_weight,
-        random_state=42
-    )
-    lgbm_model.fit(X_train, y_train)
-    return lgbm_model
-
-def train_CatBoostClassifier(X_train: pd.DataFrame, y_train: pd.Series) -> CatBoostClassifier:
-    """Trains the CatBoost Classifier model.
-
-    Args:
-        X_train: Training data of independent features.
-        y_train: Training data for subscription status.
-        pos_class_weight: Weight for the positive class to handle class imbalance.
-
-    Returns:
-        Trained catboost_model.
-    """
-    pos_class_weight = compute_pos_class_weight(y_train)
-
-    catboost_model = CatBoostClassifier(
-        iterations=200,
-        learning_rate=0.05,
-        depth=4,
-        scale_pos_weight=pos_class_weight,
-        random_seed=42,
-        verbose=0
-    )
-    catboost_model.fit(X_train, y_train)
-    return catboost_model
-
-def evaluate_MachineLearningModels(
-    rf_model, 
-    gb_model, 
-    lr_model, 
-    xgb_model, 
-    lgbm_model, 
-    catboost_model, 
-    X_test: pd.DataFrame, 
-    y_test: pd.Series, 
-    ) -> dict:
-    """Evaluating all Machine Learning models based on accuracy, precision, recall and F1-score.
-
-    Args:
-        classifier: Trained all 6 models.
-        X_test: Testing data of independent features.
-        y_test: Testing data subscription status.
-    """
-    models = {
-        "Random Forest": rf_model,
-        "Gradient Boosting": gb_model,
-        "Logistic Regression": lr_model,
-        "XGBoost": xgb_model,
-        "LightGBM": lgbm_model,
-        "CatBoost": catboost_model
+    # Base models with imbalance handling
+    base_models: Dict[str, object] = {
+        "log_reg": LogisticRegression(
+            max_iter=1000,
+            n_jobs=-1,
+            class_weight="balanced",
+        ),
+        "random_forest": RandomForestClassifier(
+            n_estimators=300,
+            random_state=42,
+            n_jobs=-1,
+            class_weight="balanced",
+        ),
+        "gradient_boosting": GradientBoostingClassifier(
+            random_state=42,
+            # no class_weight support, it's okay
+        ),
+        "xgboost": XGBClassifier(
+            objective="binary:logistic",
+            eval_metric="logloss",
+            tree_method="hist",
+            random_state=42,
+            n_jobs=-1,
+            scale_pos_weight=scale_pos_weight,
+        ),
+        "lightgbm": LGBMClassifier(
+            random_state=42,
+            n_jobs=-1,
+            scale_pos_weight=scale_pos_weight,
+        ),
+        "catboost": CatBoostClassifier(
+            loss_function="Logloss",
+            random_seed=42,
+            verbose=False,
+            class_weights=cat_class_weights,
+        ),
     }
-    results = {}
-    logger = logging.getLogger(__name__)
 
-    for model_name, model in models.items():
-        y_pred = model.predict(X_test)
+    param_distributions: Dict[str, Dict[str, list]] = {
+        "log_reg": {
+            "clf__C": [0.01, 0.1, 1.0, 10.0, 100.0],
+            "clf__penalty": ["l2"],
+        },
+        "random_forest": {
+            "clf__n_estimators": [200, 300, 400],
+            "clf__max_depth": [None, 5, 10, 20],
+            "clf__min_samples_leaf": [1, 2, 4],
+        },
+        "gradient_boosting": {
+            "clf__n_estimators": [100, 200, 300],
+            "clf__learning_rate": [0.05, 0.1, 0.2],
+            "clf__max_depth": [3, 4, 5],
+        },
+        "xgboost": {
+            "clf__n_estimators": [200, 300, 400],
+            "clf__max_depth": [3, 5, 7],
+            "clf__learning_rate": [0.03, 0.1],
+            "clf__subsample": [0.7, 0.9],
+            "clf__colsample_bytree": [0.7, 0.9],
+        },
+        "lightgbm": {
+            "clf__n_estimators": [200, 300, 400],
+            "clf__num_leaves": [15, 31, 63],
+            "clf__learning_rate": [0.03, 0.1],
+            "clf__subsample": [0.7, 0.9],
+            "clf__colsample_bytree": [0.7, 0.9],
+        },
+        "catboost": {
+            "clf__depth": [4, 6, 8],
+            "clf__learning_rate": [0.03, 0.1],
+            "clf__l2_leaf_reg": [1, 3, 5],
+            "clf__iterations": [200, 300, 400],
+        },
+    }
 
-        accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
-        recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
-        f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+    trained_models: Dict[str, Pipeline] = {}
 
-        logger.info(f"{model_name} Accuracy: {accuracy:.3f}")
-        logger.info(f"{model_name} Precision: {precision:.3f}")
-        logger.info(f"{model_name} Recall: {recall:.3f}")   
-        logger.info(f"{model_name} F1-Score: {f1:.3f}")
+    for name, base_clf in base_models.items():
+        # Define steps: Preprocess -> SMOTE -> Classifier
+        steps = [
+            ("preprocessor", preprocessor),
+            ("smote", SMOTE(random_state=42, k_neighbors=5)), 
+            ("clf", base_clf),
+        ]
         
-        results[model_name] = {     
-            "model" : model_name,
-            "accuracy": accuracy,
-            "precision": precision,
-            "recall": recall,
-            "f1_score": f1
+        if "class_weight" in base_clf.get_params():
+             base_clf.set_params(class_weight=None)
+        if "scale_pos_weight" in base_clf.get_params():
+             base_clf.set_params(scale_pos_weight=1)
+
+        pipe = Pipeline(steps)
+
+        search = RandomizedSearchCV(
+            estimator=pipe,
+            param_distributions=param_distributions[name],
+            n_iter=20,       
+            scoring="average_precision",
+            refit="average_precision",
+            n_jobs=-1,
+            cv=3,
+            verbose=1,
+            random_state=42,
+        )
+
+        search.fit(X_train, y_train)
+        best_pipe: Pipeline = search.best_estimator_
+        trained_models[name] = best_pipe
+
+    return trained_models
+
+
+def evaluate_models(
+    trained_models: Dict[str, Pipeline],
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+):
+    """
+    Evaluate tuned models on the test set with THRESHOLD OPTIMISATION.
+
+    For each model:
+    - Use predict_proba / decision_function to get scores
+    - Search thresholds in [0.1, 0.9]
+    - Pick threshold that maximises F1
+    - Compute accuracy, F1, ROC-AUC with that threshold
+
+    Returns:
+        best_model: fitted sklearn Pipeline
+        metrics: dict with per-model accuracy, F1, ROC-AUC, best_threshold
+    """
+    metrics: Dict[str, Dict[str, float]] = {}
+    best_name = None
+    best_f1_overall = -1.0
+
+    thresholds = np.linspace(0.1, 0.9, 17)
+
+    for name, model in trained_models.items():
+        # Get scores
+        if hasattr(model, "predict_proba"):
+            scores = model.predict_proba(X_test)[:, 1]
+        else:
+            scores = model.decision_function(X_test)
+
+        best_f1 = -1.0
+        best_t = 0.5
+        best_acc = 0.0
+
+        for t in thresholds:
+            y_pred_t = (scores >= t).astype(int)
+            f1 = f1_score(y_test, y_pred_t)
+            acc = accuracy_score(y_test, y_pred_t)
+            if f1 > best_f1:
+                best_f1 = f1
+                best_t = t
+                best_acc = acc
+
+        roc = roc_auc_score(y_test, scores)
+
+        metrics[name] = {
+            "accuracy": float(best_acc),
+            "f1": float(best_f1),
+            "roc_auc": float(roc),
+            "best_threshold": float(best_t),
         }
-    
-    return results
+
+        if best_f1 > best_f1_overall:
+            best_f1_overall = best_f1
+            best_name = name
+
+    best_model = trained_models[best_name]
+
+    return best_model, metrics

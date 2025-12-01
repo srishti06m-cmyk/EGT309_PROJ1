@@ -23,33 +23,34 @@ previous_contact_cleaned:
   type: pandas.ParquetDataset
   filepath: data/02_intermediate/previous_contact_cleaned.parquet
 
+#after cleaning campaign calls
+campaign_calls_cleaned:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/campaign_calls_cleaned.parquet
+
 #after encoding yes and no values
 binary_encoded:
   type: pandas.ParquetDataset
   filepath: data/02_intermediate/binary_encoded.parquet
 
 #03_primary — fully cleaned
-#after adding age bins
-age_binned:
-  type: pandas.ParquetDataset
-  filepath: data/03_primary/age_binned.parquet
-
-#after job classification
-job_classified:
-  type: pandas.ParquetDataset
-  filepath: data/03_primary/job_classified.parquet
-
-#after adding loan count
-loan_count_added:
-  type: pandas.ParquetDataset
-  filepath: data/03_primary/loan_count_added.parquet
-
-#after cleaning unknown categories
 cleaned_categories:
   type: pandas.ParquetDataset
   filepath: data/03_primary/cleaned_categories.parquet
 
-#04_feature — feature engineering results
+#04_feature — feature engineering steps
+age_binned:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/age_binned.parquet
+
+job_classified:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/job_classified.parquet
+
+loan_count_added:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/loan_count_added.parquet
+
 columns_dropped:
   type: pandas.ParquetDataset
   filepath: data/04_feature/columns_dropped.parquet
@@ -58,3 +59,12 @@ columns_dropped:
 model_input_table:
   type: pandas.ParquetDataset
   filepath: data/05_model_input/model_input_table.parquet
+
+best_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/best_model.pkl
+
+#final model performance metrics
+evaluation_metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/evaluation_metrics.json
