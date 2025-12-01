@@ -16,17 +16,17 @@ def create_pipeline(**kwargs) -> Pipeline:
         [
             Node(
                 func=compare_subscription_by_occupation,
-                inputs="raw_loaded",
+                inputs="load_raw_data",
                 outputs="Comparison_Subscription_by_Occupation_plot",
             ),
             Node(
                 func=compare_subscription_by_contact_method,
-                inputs="raw_loaded",
+                inputs="load_raw_data",
                 outputs="Comparison_Subscription_by_Contact_Method_plot",
             ),
             Node(
                 func=create_confusion_matrix,
-                inputs=["y_test","y_pred"],
+                inputs=["y_test","y_pred_t"],
                 outputs="Models_Confusion_Matrix",
             ),
             Node(

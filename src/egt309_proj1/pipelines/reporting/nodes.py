@@ -2,6 +2,7 @@ from typing import Dict
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import plotly.express as px  # noqa:  F401
 import plotly.graph_objs as go
 import seaborn as sn
@@ -65,11 +66,11 @@ def compare_subscription_by_contact_method(load_raw_data: SparkDataFrame):
     return fig
 
 # This function creates a confusion matrix for the best model
-def create_confusion_matrix(y_test: pd.Series, y_pred: pd.Series):
+def create_confusion_matrix(y_test: pd.Series, y_pred_t: pd.Series):
     matplotlib.use('Agg')
 
     cm = pd.crosstab(
-        y_test, y_pred, 
+        y_test, y_pred_t, 
         rownames=['Actual'], colnames=['Predicted'])
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -80,7 +81,7 @@ def create_confusion_matrix(y_test: pd.Series, y_pred: pd.Series):
     return fig
 
 # This function plots model performance metrics for the 6 models
-def plot_model_metrics(metrics: dict[str, dict]):
+def plot_model_metrics(metrics: Dict[str, dict]):
     """
     metrics dict example:
     { "log_reg": {"accuracy":..., "precision":..., "recall":..., "f1_score": ..., "roc_auc":..., "best_threshold":...},
@@ -110,7 +111,7 @@ def plot_model_metrics(metrics: dict[str, dict]):
     return fig
 
 # This function plots feature importance for the 6 models
-def plot_feature_importance_for_MLModels(trained_models: dict[str, object]):
+def plot_feature_importance_for_MLModels(trained_models: Dict[str, object]):
     matplotlib.use('Agg')
 
     first_model = next(iter(trained_models.values()))
@@ -162,7 +163,7 @@ def plot_feature_importance_for_MLModels(trained_models: dict[str, object]):
     return fig
 
 # This function plots ROC curves for the 6 models
-def plot_roc_curve_for_MLModels(trained_models: dict[str, object], X_test, y_test):
+def plot_roc_curve_for_MLModels(trained_models: Dict[str, object], X_test, y_test):
     matplotlib.use('Agg')
 
     fig, ax = plt.subplots(figsize=(8, 6))
