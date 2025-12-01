@@ -17,8 +17,8 @@ def compare_subscription_by_occupation(load_raw_data: SparkDataFrame):
     # Perform the grouping and aggregation using SQL
     query = """
             SELECT Occupation, AVG(CASE 
-            WHEN Subscription Status = 'yes' THEN 1.0 
-            ELSE 0.0 
+            WHEN `Subscription Status` = 'yes' THEN 1 
+            ELSE 0 
             END) AS Subscription_Rate
             FROM bank_marketing
             GROUP BY Occupation
@@ -36,12 +36,12 @@ def compare_subscription_by_contact_method(load_raw_data: SparkDataFrame):
     load_raw_data.createOrReplaceTempView("bank_marketing")
     # Perform the grouping and aggregation using SQL
     query = """
-        SELECT Contact Method AS Contact_Method, AVG(CASE 
-        WHEN Subscription Status = 'yes' THEN 1.0 
-        ELSE 0.0 
+        SELECT `Contact Method` AS Contact_Method, AVG(CASE 
+        WHEN Subscription Status = 'yes' THEN 1 
+        ELSE 0 
         END) AS Subscription_Rate
         FROM bank_marketing
-        GROUP BY Contact Method
+        GROUP BY `Contact Method`
         ORDER BY Subscription_Rate DESC
     """
     grouped_data = spark.sql(query)
@@ -63,37 +63,43 @@ def compare_subscription_by_contact_method(load_raw_data: SparkDataFrame):
     )
     return fig
 
-# This function creates a confusion matrix from model predictions
-def create_confusion_matrix(bank_marketing: pd.DataFrame):
+# This function creates a confusion matrix for the best model
+def create_confusion_matrix(y_test: pd.Series, y_pred: pd.Series):
     matplotlib.use('Agg')
 
-    df = bank_marketing.copy()
-    actual = df["y_test"]
-    predicted = df["y_pred"]
-
-    confusion_matrix = pd.crosstab(
-        actual,
-        predicted, 
-        rownames=["Actual"], 
-        colnames=["Predicted"]
-    )
+    cm = pd.crosstab(
+        y_test, y_pred, 
+        rownames=['Actual'], colnames=['Predicted'])
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    sn.heatmap(confusion_matrix, annot=True, fmt='d', cmap='Blues', ax=ax)
-    ax.set_title('Confusion Matrix based on Model Predictions')
+    sn.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
+    ax.set_title('Confusion Matrix')
     plt.tight_layout()
 
     return fig
 
-# This function plots model performance metrics for the 3 models
-def plot_model_metrics(results: dict):
+# This function plots model performance metrics for the 6 models
+def plot_model_metrics(metrics: dict[str, dict]):
+    """
+    metrics dict example:
+    { "log_reg": {"accuracy":..., "precision":..., "recall":..., "f1_score": ..., "roc_auc":..., "best_threshold":...},
+    """
     
-    model_metrics=pd.DataFrame(results).T
-    model_metrics.rename(columns={"model": "model_name"}, inplace=True)
+    matplotlib.use('Agg')
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    df = pd.DataFrame(metrics).T
+    df.rename(index={
+        "log_reg": "Logistic Regression",
+        "random_forest": "Random Forest",
+        "gradient_boosting": "Gradient Boosting",
+        "xgboost": "XGBoost",
+        "lightgbm": "LightGBM",
+        "catboost": "CatBoost"
+        }, inplace=True)
+    
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-    model_metrics.set_index("model_name")[["accuracy", "precision", "recall", "f1_score"]].plot(kind='bar', ax=ax)
+    df[["accuracy", "precision", "recall", "f1", "roc_auc"]].plot(kind='bar', ax=ax)
 
     ax.set_title("Model Performance Metrics")
     ax.set_ylabel("Score")
@@ -103,103 +109,85 @@ def plot_model_metrics(results: dict):
     return fig
 
 # This function plots feature importance for the 6 models
-def plot_feature_importance_for_MLModels(rf_model, gb_model, lr_model, xgb_model, lgbm_model, catboost_model, feature_names: list):
+def plot_feature_importance_for_MLModels(trained_models: Dict[str, object]):
     matplotlib.use('Agg')
 
-    fig, ax = plt.subplots(1, 3, figsize=(14, 18))
+    first_model = next(iter(trained_models.values()))
+    preproccessor = first_model.named_steps['preprocessor']
+    feature_names = preproccessor.get_feature_names_out()
 
-    # Random Forest Feature Importance
-    rf_importances = rf_model.feature_importances_
-    rf_indices = rf_importances.argsort()[::-1]
+    model_order = [
+        "random_forest","gradient_boosting","log_reg",
+        "xgboost","lightgbm","catboost"
+    ]
 
-    ax[0].barh([feature_names[i] for i in rf_indices], rf_importances[rf_indices], align='center')
-    ax[0].invert_yaxis()
-    ax[0].set_title('Random Forest Feature Importance')
-    ax[0].set_xlabel('Importance Score')
+    fig, axes = plt.subplots(2, 3, figsize=(20, 10))
+    axes= axes.flatten()
 
-    # Gradient Boosting Feature Importance
-    gb_importances = gb_model.feature_importances_
-    gb_indices = gb_importances.argsort()[::-1]
+    title_map = {
+        "random_forest": "Random Forest Feature Importance",
+        "gradient_boosting": "Gradient Boosting Feature Importance",
+        "log_reg": "Logistic Regression Feature Importance",
+        "xgboost": "XGBoost Feature Importance",
+        "lightgbm": "LightGBM Feature Importance",
+        "catboost": "CatBoost Feature Importance"
+    }
+    for i, name in enumerate(model_order):
+        ax = axes[i]
+        model = trained_models.get(name)
 
-    ax[1].barh([feature_names[i] for i in gb_indices], gb_importances[gb_indices], align='center')
-    ax[1].invert_yaxis()
-    ax[1].set_title('Gradient Boosting Feature Importance')
-    ax[1].set_xlabel('Importance Score')
+        if model is None:
+            ax.axis('off')
+            continue
 
-    # Logistic Regression Feature Importance
-    lr_importances = abs(lr_model.coef_[0])
-    lr_indices = lr_importances.argsort()[::-1]
+        clf = model.named_steps['clf']
 
-    ax[2].barh([feature_names[i] for i in lr_indices], lr_importances[lr_indices], align='center')
-    ax[2].invert_yaxis()
-    ax[2].set_title('Logistic Regression Feature Importance')
-    ax[2].set_xlabel('Coeefficient Magnitude')
+        if hasattr(clf, 'feature_importances_'):
+            importances = clf.feature_importances_
+        elif hasattr(clf, 'coef_'):
+            importances = abs(clf.coef_).flatten()
+        else:
+            ax.axis('off')
+            continue
 
-    # XGBoost Feture importance
-    xgb_importances = xgb_model.feature_importances_
-    xgb_indices = xgb_importances.argsort()[::-1]
-
-    ax[3].barh([feature_names[i] for i in xgb_indices], xgb_importances[xgb_indices], align='center')
-    ax[3].invert_yaxis()
-    ax[3].set_title('XGBoost Feature Importance')
-    ax[3].set_xlabel('Importance Score')
-
-    # LightGBM Feature importance
-    lgbm_importances = lgbm_model.feature_importances_
-    lgbm_indices = lgbm_importances.argsort()[::-1]
-    
-    ax[4].barh([feature_names[i] for i in lgbm_indices], lgbm_importances[lgbm_indices], align='center')
-    ax[4].invert_yaxis()
-    ax[4].set_title('LightGBM Feature Importance')
-    ax[4].set_xlabel('Importance Score')
-
-    # CatBoost Feature importance
-    catboost_importances = catboost_model.get_feature_importance()
-    catboost_indices = catboost_importances.argsort()[::-1]
-
-    ax[5].barh([feature_names[i] for i in catboost_indices], catboost_importances[catboost_indices], align='center')
-    ax[5].invert_yaxis()
-    ax[5].set_title('CatBoost Feature Importance')
-    ax[5].set_xlabel('Importance Score')
+        idx=np.argsort(importances)[::-1][:20]
+        ax.barh([feature_names[i] for i in idx], importances[idx])
+        ax.invert_yaxis()
+        ax.set_title(title_map[name])
+        ax.set_xlabel("Importance Score")
     
     plt.tight_layout()
     
     return fig
-\
+
 # This function plots ROC curves for the 6 models
-def plot_roc_curve_for_MLModels(rf_model, gb_model, lr_model,xgb_model, lgbm_model, catboost_model, X_test, y_test):
+def plot_roc_curve_for_MLModels(trained_models:Dict[str, object], X_test, y_test):
     matplotlib.use('Agg')
 
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    models = {
-    "Random Forest": rf_model,
-        "Gradient Boosting": gb_model,
-        "Logistic Regression": lr_model,
-        "XGBoost": xgb_model,
-        "LightGBM": lgbm_model,
-        "CatBoost": catboost_model
+    name_map = {
+    "log_reg": "Logistic Regression",
+    "random_forest": "Random Forest",
+    "gradient_boosting": "Gradient Boosting",
+    "xgboost": "XGBoost",
+    "lightgbm": "LightGBM",
+    "catboost": "CatBoost"
     }
-
-    if y_test.dtype == object:
-        pos_label = 'yes'
-    else:
-        pos_label = 1
-
-    for model_name, model in models.items():
-        proba=model.predict_proba(X_test)
-        if model.classes_.dtype == object:
-            idx=list(model.classes_).index("yes")
-            y_prob = proba[:, idx]
+    
+    for name, model in trained_models.items():
+        if hasattr(model, "predict_proba"):
+            prob = model.predict_proba(X_test)[:, 1]
         else:
-            y_prob = proba[:, 1]
+            prob = model.decision_function(X_test)
         
-        fpr, tpr, _ = roc_curve(y_test, y_prob, pos_label=pos_label)
+        fpr, tpr, _ = roc_curve(y_test, prob)
         roc_auc = auc(fpr, tpr)
-        ax.plot(fpr, tpr, label=f'{model_name} (AUC = {roc_auc:.2f})')
+        
+        ax.plot(fpr, tpr, label = f"{name_map[name]} (AUC = {roc_auc:.2f})")
 
     ax.plot([0, 1], [0, 1], 'k--')
-    ax.set_title('ROC Curve for ML Models')
+    ax.set_title('ROC Curve for All ML Models')
     ax.set_xlabel('False Positive Rate')
     ax.set_ylabel('True Positive Rate')
     ax.legend(loc='lower right')
