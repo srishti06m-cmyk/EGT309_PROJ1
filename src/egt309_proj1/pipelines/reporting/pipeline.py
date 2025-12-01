@@ -26,22 +26,22 @@ def create_pipeline(**kwargs) -> Pipeline:
             ),
             Node(
                 func=create_confusion_matrix,
-                inputs="bank_marketing",
+                inputs=["y_test","y_pred"],
                 outputs="Models_Confusion_Matrix",
             ),
             Node(
                 func=plot_model_metrics,
-                inputs="results",
+                inputs="metrics",
                 outputs="Model_Performance_Plots",
             ),
             Node(
                 func=plot_feature_importance_for_MLModels,
-                inputs=["rf_model", "gb_model", "lr_model", "xgb_model", "lgbm_model", "catboost_model", "feature_names"],
+                inputs=["trained_models"],
                 outputs="Feature_Importance_Plots_for_MLModels",
             ),
             Node(
                 func=plot_roc_curve_for_MLModels,
-                inputs=["rf_model", "gb_model", "lr_model", "xgb_model", "lgbm_model", "catboost_model", "X_test", "y_test"],
+                inputs=["trained_models", "X_test", "y_test"],
                 outputs="ROC_Curve_Plots_for_MLModels",
             ),
         ]
