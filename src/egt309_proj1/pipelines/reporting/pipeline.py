@@ -16,12 +16,12 @@ def create_pipeline(**kwargs) -> Pipeline:
         [
             Node(
                 func=compare_subscription_by_occupation,
-                inputs="load_raw_data",
+                inputs="raw_loaded",
                 outputs="Comparison_Subscription_by_Occupation_plot",
             ),
             Node(
                 func=compare_subscription_by_contact_method,
-                inputs="load_raw_data",
+                inputs="raw_loaded",
                 outputs="Comparison_Subscription_by_Contact_Method_plot",
             ),
             Node(
@@ -31,7 +31,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             ),
             Node(
                 func=plot_model_metrics,
-                inputs="metrics",
+                inputs="evaluation_metrics",
                 outputs="Model_Performance_Plots",
             ),
             Node(

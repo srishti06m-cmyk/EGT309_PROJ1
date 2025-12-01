@@ -1,3 +1,4 @@
+from typing import Dict
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
