@@ -1,15 +1,23 @@
+#Use python 3.11 slim image as base image
 FROM python:3.11-slim
 
+#Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-	PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 
 
+#Set working directory
 WORKDIR /project
 
+#Copy entire project
 COPY . .
 
+#Install project dependencies
 RUN pip install --upgrade pip && \
 	pip install -e .
 
+#Expose port 8888
 EXPOSE 8888
 
+#Star bash shell by default
 CMD ["/bin/bash"]
+	
