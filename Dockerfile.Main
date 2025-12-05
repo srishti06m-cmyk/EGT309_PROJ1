@@ -1,15 +1,22 @@
+#Use python 3.11 slim image as base image
 FROM python:3.11-slim
 
+#Set environment variables
 ENV PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 
 
+#Set working directory inside container
 WORKDIR /project
 
+#Copy entire project
 COPY . .
 
+#Upgrade pip and install project in editable mode
 RUN pip install --upgrade pip && \
-    pip install -e .
+	pip install -e .
 
-RUN chmod +x run.sh
+#Ensure run.sh is executable
+RUN chmod +x ./run.sh
 
+#Set default command to run the application
 ENTRYPOINT ["./run.sh"]
