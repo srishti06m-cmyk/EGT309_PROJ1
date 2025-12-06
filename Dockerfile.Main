@@ -1,17 +1,26 @@
-
 FROM python:3.11-slim
 
+#Environment variables
 ENV PYTHONUNBUFFERED=1 \
-	PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 
 
+#Install system dependancies for ML libraries
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libgomp1 \
+    libssl-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+
+#working directory
 WORKDIR /project
 
-COPY pyproject.toml README.md requirements.txt ./
-RUN pip install --upgrade pip && \
-	pip install -e .
-
+#Coping project files
 COPY . .
 
-RUN chmod +x run.sh
+#Upgrading pip and install dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-ENTRYPOINT ["./run.sh"]
+CMD ["kedro", "run"]
