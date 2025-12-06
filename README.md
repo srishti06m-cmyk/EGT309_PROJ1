@@ -48,9 +48,10 @@ Step 5: Run the Necessary notebooks or file (ect. EDA)
 - Method 3: Running the run.sh file
 
 Step 1: Navigate to the project directory within a bash terminal (Git Bach, VS code Bash, Ubuntu)
-Step 2: Activate the virtual environment using this "source venv/bin/activate" command
-Step 3: Ensure dependencies (from the requirements.txt) are installed
-Step 4: Run the pipeline using "./run.sh"
+Step 2: Create virtual environment (if it does not exist) using this "python3 -m venv venv" command
+Step 3: Activate the virtual environment using this "source venv/bin/activate" command
+Step 4: Ensure dependencies (from the requirements.txt) are installed using this "pip install -r requirements.txt" command
+Step 5: Run the pipeline using "./run.sh"
 
 ## Descrip/on of logical steps/flow of the pipeline
 
