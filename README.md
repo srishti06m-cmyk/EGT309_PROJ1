@@ -22,6 +22,36 @@ This project focuses on the deployment of an end-to-end machine learning pipelin
 
 ## How to run this project
 
+- Method 1: Running on VS code
+
+Step 1: Clone repositary from Git hub using this "gh repo clone srishti06m-cmyk/EGT309_PROJ1" command in VS code terminal
+Step 2: Open the project locally using this "code EGT309_PROJ1" command in the VS code terminal
+Step 3: Run the kedro pipeline using "kedro run" in the VS code terminal
+
+- Method 2: Running the DockerFile
+
+There are two DockerFiles. One for the Kedro pipeline (Dockerfile.Main) and the other for the EDA file (Dockerfile.run). to run the kedro pipeline Dockerfile (Dockerfile.Main):
+
+Step 1: Ensure Docker Desktop is open before running these commands 
+Step 2: Change the project directory on either the VS code terminal, Powershell or Windows Terminal to be inside the project folder containing the Dockerfile.Main
+Step 3: Run this "docker build -f Dockerfile.Main -t egt309-pipeline ." command on the terminal
+Step 4: Run this "docker run --rm egt309-pipeline" command to run the kedro pipeline
+
+To run the Dockerfile for EDA (Dockerfile.run):
+
+Step 1: Ensure Docker Desktop is open before running these commands
+Step 2: Change the project directory on either the VS code terminal, Powershell or Windows Terminal to be inside the project folder containing the Dockerfile.run
+Step 3: Run the development container which will bring us into container terminal using this "docker run -it -p 8888:8888 egt309-dev" command
+Step 4: Start Jupyter Lab by clicking on the localhost to go to Jupyter Page (jupyter lab --ip=0.0.0.0 --no-browser --allow-root)
+Step 5: Run the Necessary notebooks or file (ect. EDA)
+
+- Method 3: Running the run.sh file
+
+Step 1: Navigate to the project directory within a bash terminal (Git Bach, VS code Bash, Ubuntu)
+Step 2: Activate the virtual environment using this "source venv/bin/activate" command
+Step 3: Ensure dependencies (from the requirements.txt) are installed
+Step 4: Run the pipeline using "./run.sh"
+
 ## Descrip/on of logical steps/flow of the pipeline
 
 1. Data loading - This project follows the standard kedro pipeline that processed data from raw ingestion, passes the cleaned database to machine learning models and finally provides a reporting output. The pipeline paths are defined in catalog.yml.
