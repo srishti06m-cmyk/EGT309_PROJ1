@@ -9,15 +9,13 @@ from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
-#from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 
-from imblearn.pipeline import Pipeline
-from imblearn.over_sampling import SMOTE
 
 
 TARGET_COL = "Subscription Status"
@@ -173,12 +171,11 @@ def train_models(
     trained_models: Dict[str, Pipeline] = {}
 
     for name, base_clf in base_models.items():
-        # Define steps: Preprocess -> SMOTE -> Classifier
         steps = [
             ("preprocessor", preprocessor),
-            ("smote", SMOTE(random_state=42, k_neighbors=5)), 
             ("clf", base_clf),
         ]
+
         
         if "class_weight" in base_clf.get_params():
              base_clf.set_params(class_weight=None)
