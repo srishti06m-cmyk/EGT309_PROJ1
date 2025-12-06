@@ -26,7 +26,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             ),
             Node(
                 func=create_confusion_matrix,
-                inputs=["best_model", "X_test", "y_test"],
+                inputs=["best_model", "X_test", "y_test", "evaluation_metrics"],
                 outputs="Models_Confusion_Matrix",
             ),
             Node(

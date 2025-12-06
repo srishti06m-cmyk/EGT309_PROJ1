@@ -22,14 +22,14 @@ def clean_age(df: pd.DataFrame, age_column: str, max_age: int) -> pd.DataFrame:
     df[age_column]=df[age_column].fillna(median_age)
     return df
 
-#standerdizing categories, making everything lowercase, remove extra spaces, convert to string 
+#standerdizing categories, making everything lowercase, remove extra spaces, convert data into string 
 def standardize_categories(df: pd.DataFrame, category_columns: List[str]) -> pd.DataFrame:
     df = df.copy()
     for col in category_columns:
         df[col] = df[col].astype(str).str.strip().str.lower()
     return df
 
-#Applies specific caetgory changes. defined in parameters.
+#Applies specific category changes. defined in parameters.
 def replace_categories(df: pd.DataFrame, replacements: dict) -> pd.DataFrame:
     """
     Example replacements:
@@ -40,7 +40,7 @@ def replace_categories(df: pd.DataFrame, replacements: dict) -> pd.DataFrame:
         df[col] = df[col].replace(mapping)
     return df
 
-#converts previous contact days to neumeric, replace 999 with NaN as it is a placeholder value else 'Had previous ocntact'
+#converts previous contact days to neumeric, replace 999 with NaN as it is a placeholder value else 'Had previous contact'
 def clean_previous_contact_days(df: pd.DataFrame, column: str, no_contact_value: int) -> pd.DataFrame:
     df = df.copy()
     df[column] = pd.to_numeric(df[column], errors="coerce")

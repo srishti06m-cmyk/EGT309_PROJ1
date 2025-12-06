@@ -1,8 +1,11 @@
 db_path: "data/01_raw/bmarket.db"
 
 age_column: "Age"
+
+# Define acceptable maximum age for cleaning
 max_age: 95
 
+# Define categorical columns for standardization
 category_columns:
   - "Occupation"
   - "Marital Status"
@@ -12,6 +15,7 @@ category_columns:
   - "Personal Loan"
   - "Credit Default"
 
+# Define conversion mappings for standardization
 replacement_mappings:
   Contact Method:
     cell: cellular
@@ -32,12 +36,13 @@ binary_columns: []
 
 binary_mapping: {}
 
-
+# Define age bins and labels for grouping
 age_bins: [0, 25, 35, 50, 65, 100]
 age_labels: ["Youth", "Young Adult", "Adult", "Mature", "Senior"]
 
 occupation_column: "Occupation"
 
+# Define job classification mapping
 job_map:
   admin.: white_collar
   management: white_collar
@@ -56,9 +61,11 @@ housing_column: "Housing Loan"
 personal_column: "Personal Loan"
 campaign_calls_column: "Campaign Calls"
 
+#Removal of columns not useful for modeling
 drop_columns:
   - "Client ID"
   - "Occupation"
   - "Previous Contact Days"
 
+#Define the target feature for prediction
 target_column: "Subscription Status"

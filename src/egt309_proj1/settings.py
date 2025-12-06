@@ -3,6 +3,9 @@ from the Kedro defaults. For further information, including these default values
 https://docs.kedro.org/en/stable/kedro_project_setup/settings.html."""
 
 # Instantiated project hooks.
+from egt309_proj1.hooks import PipelineSummaryHook
+
+HOOKS = (PipelineSummaryHook(),)
 # For example, after creating a hooks.py and defining a ProjectHooks class there, do
 # from egt309_proj1.hooks import ProjectHooks
 

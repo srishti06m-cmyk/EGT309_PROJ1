@@ -1,11 +1,8 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
-import plotly.express as px  # noqa:  F401
-import plotly.graph_objs as go
 import seaborn as sn
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_curve, auc, confusion_matrix
 
 
 
@@ -18,7 +15,7 @@ def compare_subscription_by_occupation(df: pd.DataFrame) -> pd.DataFrame:
       - 'Subscription Status' with values 'yes' / 'no'
     """
     grouped = (
-        df.groupby("Job_Type")["Subscription Status"]   # <-- changed from "Occupation"
+        df.groupby("Job_Type")["Subscription Status"]
           .apply(lambda s: (s == "yes").mean())
           .reset_index(name="Subscription_Rate")
           .sort_values("Subscription_Rate", ascending=False)
@@ -35,31 +32,22 @@ def compare_subscription_by_contact_method(df: pd.DataFrame):
           .sort_values("Subscription_Rate", ascending=False)
     )
 
-    fig = go.Figure(
-        [
-            go.Bar(
-                x=grouped["Contact Method"],
-                y=grouped["Subscription_Rate"],
-            )
-        ]
-    )
-    fig.update_layout(
-        title="Subscription Rate by Contact Method",
-        xaxis_title="Contact Method",
-        yaxis_title="Subscription Rate",
-    )
-    return fig
-
+    return grouped
 
 def create_confusion_matrix(
     best_model,
-    X_test: pd.DataFrame,
-    y_test: pd.Series,
+    X_test,
+    y_test,
+    evaluation_metrics: dict,
 ):
     matplotlib.use("Agg")
 
     # Get predictions from the trained best model
-    y_pred = best_model.predict(X_test)
+    best_name= max(evaluation_metrics, key=lambda m: evaluation_metrics[m]["f1"])
+    best_threshold = evaluation_metrics[best_name]["best_threshold"]
+
+    y_scores = best_model.predict_proba(X_test)[:, 1]
+    y_pred = (y_scores >= best_threshold).astype(int)
 
     # Build confusion matrix
     cm = confusion_matrix(y_test, y_pred)
@@ -72,11 +60,6 @@ def create_confusion_matrix(
     plt.tight_layout()
 
     return fig
-
-
-import matplotlib
-import matplotlib.pyplot as plt
-import pandas as pd
 
 def plot_model_metrics(results: dict):
     """
@@ -125,11 +108,10 @@ def plot_feature_importance_for_MLModels(trained_models: dict):
     matplotlib.use("Agg")
 
     # Use one model to get feature names from the preprocessor
-    any_model = trained_models["random_forest"]  # or any that exists
+    any_model = next(iter(trained_models.values()))
     preprocessor = any_model.named_steps["preprocessor"]
     feature_names = preprocessor.get_feature_names_out()
 
-    # Pick models that have feature_importances_ (tree-based)
     model_names = ["random_forest", "gradient_boosting", "xgboost", "lightgbm", "catboost"]
     display_models = [m for m in model_names if m in trained_models]
 

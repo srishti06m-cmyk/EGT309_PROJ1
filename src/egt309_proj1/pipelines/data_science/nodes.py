@@ -3,6 +3,7 @@ from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 import matplotlib
+import matplotlib.pyplot as plt
 
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
@@ -15,6 +16,9 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 
@@ -47,7 +51,7 @@ def split_data(
     )
     return X_train, X_test, y_train, y_test
 
-
+#Makes use of libraries to build preprocessing steps for numeric and categorical features
 def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
     """
     Build a ColumnTransformer that:
@@ -67,7 +71,7 @@ def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
     )
     return preprocessor
 
-
+#Compute class weights for imbalance handling
 def _get_class_weights(y_train: pd.Series):
     """Compute imbalance ratio for use in boosting models."""
     pos = (y_train == 1).sum()
@@ -83,7 +87,6 @@ def train_models(
     X_train: pd.DataFrame, y_train: pd.Series
 ) -> Dict[str, Pipeline]:
     """
-    FAST tuning version:
     - Uses RandomizedSearchCV with ~20 trials per model
     - Uses class weights / scale_pos_weight for imbalance
     - Returns best tuned Pipeline per model.
@@ -108,7 +111,7 @@ def train_models(
         ),
         "gradient_boosting": GradientBoostingClassifier(
             random_state=42,
-            # no class_weight support, it's okay
+            # no class_weight support, it's okay, as Gradient Boosting does not use class weights directly
         ),
         "xgboost": XGBClassifier(
             objective="binary:logistic",
@@ -176,20 +179,13 @@ def train_models(
             ("clf", base_clf),
         ]
 
-        
-        if "class_weight" in base_clf.get_params():
-             base_clf.set_params(class_weight=None)
-        if "scale_pos_weight" in base_clf.get_params():
-             base_clf.set_params(scale_pos_weight=1)
-
         pipe = Pipeline(steps)
 
         search = RandomizedSearchCV(
             estimator=pipe,
             param_distributions=param_distributions[name],
             n_iter=20,       
-            scoring="average_precision",
-            refit="average_precision",
+            scoring="f1",
             n_jobs=-1,
             cv=3,
             verbose=1,
@@ -269,13 +265,36 @@ def evaluate_models(
             best_f1_overall = best_f1
             best_name = name
 
+    # log performance summary
+    logger.info("========== MODEL PERFORMANCE SUMMARY ==========")
+    for model_name, m in metrics.items():
+        logger.info(
+            "%s -> F1: %.3f | Accuracy: %.3f | Precision: %.3f | Recall: %.3f | ROC-AUC: %.3f | Threshold: %.2f",
+            model_name,
+            m["f1"],
+            m["accuracy"],
+            m["precision"],
+            m["recall"],
+            m["roc_auc"],
+            m["best_threshold"],
+        )
+
+    logger.info("------------------------------------------------")
+    logger.info(
+        "BEST MODEL: %s | F1: %.3f | Accuracy: %.3f | Precision: %.3f | Recall: %.3f | ROC-AUC: %.3f | Threshold: %.2f",
+        best_name,
+        metrics[best_name]["f1"],
+        metrics[best_name]["accuracy"],
+        metrics[best_name]["precision"],
+        metrics[best_name]["recall"],
+        metrics[best_name]["roc_auc"],
+        metrics[best_name]["best_threshold"],
+    )
+    logger.info("================================================")
     best_model = trained_models[best_name]
 
     return best_model, metrics
 
-import matplotlib
-import matplotlib.pyplot as plt
-import pandas as pd
 
 def plot_model_metrics(results: dict):
     """

@@ -22,7 +22,7 @@ This project focuses on the deployment of an end-to-end machine learning pipelin
 
 ## How to run this project
 
-## Descrip/on of logical steps/flow of the pipeline
+## Description of logical steps/flow of the pipeline
 
 1. Data loading - This project follows the standard kedro pipeline that processed data from raw ingestion, passes the cleaned database to machine learning models and finally provides a reporting output. The pipeline paths are defined in catalog.yml.
 
@@ -143,7 +143,7 @@ The EDA revealed found several data quality issues. Age values contained text an
 2. Visual Diagnostics.
  In addition to scalar measurements, the reporting nodes generate many plots:
 - Confusion Matrix
- . A heatmap was created by combining the true labels and predictions from the test dataset.
+ . A heatmap for the best performing model was created by combining the true labels and predictions from the test dataset.
  . It displays true positives, true negatives, false positives, and false negatives, allowing you to identify the most prevalent sorts of errors.
 - ROC Curves and AUC
  . The ROC curve and Area Under the Curve (AUC) are calculated for each model using the anticipated probabilities.
@@ -173,3 +173,63 @@ The EDA revealed found several data quality issues. Age values contained text an
  . Tree-based models (Random Forest, Gradient Boosting, XGBoost, LightGBM, and CatBoost) can be explained using feature importance or SHAP values.
  . Ensures predictions are understandable.
 
+## Analysis of models' performance
+
+By looking at the metrics below:
+
+'catboost': accuracy': 0.8810238996996212
+              'best_threshold': 0.65
+              'f1': 0.363382250174703
+              'precision': 0.44905008635578586
+              'recall': 0.3051643192488263
+              'roc_auc': 0.7219075658950026
+ 'gradient_boosting': 'accuracy': 0.8816768969570328
+                       'best_threshold': 0.2
+                       'f1': 0.3565340909090909
+                       'precision': 0.45143884892086333
+                       'recall': 0.29460093896713613
+                       'roc_auc': 0.7179144546436098
+ 'lightgbm': 'accuracy': 0.8798485046362805
+              'best_threshold': 0.65
+              'f1': 0.36464088397790057
+              'precision': 0.4429530201342282
+              'recall': 0.30985915492957744
+              'roc_auc': 0.7149915658536079
+ 'log_reg':'accuracy': 0.8865090766618781
+             'best_threshold': 0.65
+             'f1': 0.35772357723577236
+             'precision': 0.48303393213572854
+             'recall': 0.284037558685446
+             'roc_auc': 0.7201380336882919
+ 'random_forest': 'accuracy': 0.8823298942144443
+                   'best_threshold': 0.65
+                   'f1': 0.34662799129804206
+                   'precision': 0.45351043643263755
+                   'recall': 0.2805164319248826
+                   'roc_auc': 0.7114500005174322
+ 'xgboost': 'accuracy': 0.8825910931174089
+             'best_threshold': 0.65
+             'f1': 0.3637650389242746
+             'precision': 0.45811051693404636
+             'recall': 0.30164319248826293
+             'roc_auc': 0.7183190004587899
+
+We can see that all models achieved a high accuracy. However, this metric is not helpful in our case due to the extreme class imbalance. This results in the models being able to achieve high accuracies by simply predicting the "no" class for majority of the cases. Hence, we mainly used F1 score and ROC-AUC graphs.
+
+Across our 6 models, LightGBM achieved the highest F1 score after the optimisation, which shows how it has the best balance between precision and recall for our "yes" class. The other gradient-boost models also performed decently well, having a performance just below the LightGBM model. This shows how gradient-boosted models are well-suited for handling datasets such as this bmarket.db. These models are different from the rest, as they have an ability to capture non-linear relationships and can handle categorial varaiables well.
+
+Other models such as the Logistic regression, performed slightly worse than the gradient-boost models. This could possibly be due to it relying on linear boundaries and is unable to capture the more complex patterns in the dataset. Random forest was also weaker than the gradient-boost models, likely due to boosting models being able to perform better than bagging models when there is data that has weak predictors.
+
+The threshold tuning we used helped to evaluate a wider range from 0.1 to 0.9 and improved the F1 scores of all the models we used. This shows how threshold tuning is important as it could lead to substantial improvements in the results.
+
+Our ROC-AUC values across all the models wer similar at around 0.71 to 0.72. This shows how our model is considerably decent, as even though there was a class imbalance, it still managed to reach a score above 0.7. 
+
+We came to the conclusion that LightGBM is the best model after looking through our results and evaluating them. It has higher scores across all the metrics, which shows that it captured the patterns more effectively than the others. However, all of the models did face limitations to their performance due to the apparent class imbalance and the limited predictive strength of the features provided.
+
+## Possible Follow-Up Actions
+
+- Improve class imbalance handling
+
+- Collect additional predictive features
+
+- Campaign Targeting
