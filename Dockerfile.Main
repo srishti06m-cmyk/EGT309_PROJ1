@@ -1,22 +1,26 @@
-#Use python 3.11 slim image as base image
 FROM python:3.11-slim
 
-#Set environment variables
+#Environment variables
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 
 
-#Set working directory inside container
+#Install system dependancies for ML libraries
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libgomp1 \
+    libssl-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+
+#working directory
 WORKDIR /project
 
-#Copy entire project
+#Coping project files
 COPY . .
 
-#Upgrade pip and install project in editable mode
-RUN pip install --upgrade pip && \
-	pip install -e .
+#Upgrading pip and install dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-#Ensure run.sh is executable
-RUN chmod +x ./run.sh
-
-#Set default command to run the application
-ENTRYPOINT ["./run.sh"]
+CMD ["kedro", "run"]
