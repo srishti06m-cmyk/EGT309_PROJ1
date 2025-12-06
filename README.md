@@ -22,7 +22,6 @@ This project focuses on the deployment of an end-to-end machine learning pipelin
 
 ## How to run this project
 
-## Description of logical steps/flow of the pipeline
 - Method 1: Running on VS code
 
 Step 1: Clone repositary from Git hub using this "gh repo clone srishti06m-cmyk/EGT309_PROJ1" command in VS code terminal
