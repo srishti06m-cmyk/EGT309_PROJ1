@@ -41,9 +41,12 @@ To run the Dockerfile for EDA (Dockerfile.run):
 
 Step 1: Ensure Docker Desktop is open before running these commands
 Step 2: Change the project directory on either the VS code terminal, Powershell or Windows Terminal to be inside the project folder containing the Dockerfile.run
-Step 3: Run the development container which will bring us into container terminal using this "docker run -it -p 8888:8888 egt309-dev" command
-Step 4: Start Jupyter Lab by clicking on the localhost to go to Jupyter Page (jupyter lab --ip=0.0.0.0 --no-browser --allow-root)
-Step 5: Run the Necessary notebooks or file (ect. EDA)
+Step 3: Run this "docker build -f Dockerfile.run -t egt309-dev ." command on the terminal
+Step 4: Run the development container which will bring us into container terminal using this "docker run -it -p 8888:8888 egt309-dev" command
+Step 5: Start Jupyter Lab by clicking on the localhost to go to Jupyter Page (jupyter lab --ip=0.0.0.0 --no-browser --allow-root)
+Step 6: Run the Necessary notebooks or file (ect. EDA)
+Step 7: To exit the Jupyter Server, Ctrl + C to shut fown server and click 'y'.
+Step 8: Type 'exit' to exit from the jupyter directory.
 
 - Method 3: Running the run.sh file
 
