@@ -250,19 +250,19 @@ By looking at the metrics below:
 
 We can see that all models achieved a high accuracy. However, this metric is not helpful in our case due to the extreme class imbalance. This results in the models being able to achieve high accuracies by simply predicting the "no" class for majority of the cases. Hence, we mainly used F1 score and ROC-AUC graphs.
 
-Across our 6 models, LightGBM achieved the highest F1 score after the optimisation, which shows how it has the best balance between precision and recall for our "yes" class. The other gradient-boost models also performed decently well, having a performance just below the LightGBM model. This shows how gradient-boosted models are well-suited for handling datasets such as this bmarket.db. These models are different from the rest, as they have an ability to capture non-linear relationships and can handle categorial varaiables well.
+Across our 6 models, the boosting models achieved the highest F1 score after the optimisation, which shows how it has the best balance between precision and recall for our "yes" class. This shows how gradient-boosted models are well-suited for handling datasets such as this bmarket.db. These models are different from the rest, as they have an ability to capture non-linear relationships and can handle categorial varaiables well.
 
 Other models such as the Logistic regression, performed slightly worse than the gradient-boost models. This could possibly be due to it relying on linear boundaries and is unable to capture the more complex patterns in the dataset. Random forest was also weaker than the gradient-boost models, likely due to boosting models being able to perform better than bagging models when there is data that has weak predictors.
 
 The threshold tuning we used helped to evaluate a wider range from 0.1 to 0.9 and improved the F1 scores of all the models we used. This shows how threshold tuning is important as it could lead to substantial improvements in the results.
 
-Our ROC-AUC values across all the models wer similar at around 0.71 to 0.72. This shows how our model is considerably decent, as even though there was a class imbalance, it still managed to reach a score above 0.7. 
+Our ROC-AUC values across all the models were similar at around 0.71 to 0.72. This shows how our models are considerably decent, as even though there was a class imbalance, they still managed to reach a score above 0.7. 
 
-We came to the conclusion that LightGBM is the best model after looking through our results and evaluating them. It has higher scores across all the metrics, which shows that it captured the patterns more effectively than the others. However, all of the models did face limitations to their performance due to the apparent class imbalance and the limited predictive strength of the features provided.
+After running the kedro pipeline several times, we realised how the best model was constantly changing between the gradient-boosting models, and this is due to how close their results are and during every pipeline run, the train and test data is always randomized, which can tip the scales slightly in regards to how the models perform. This is why we have not chosen one particular gradient-boosting model as the best, as further tweaks to parameters for optimization for each of the 3 can lead to slight improvements, depending on the techniques performed. 
+
+Hence, we came to the conclusion that the boosting models are the most suitable after looking through our results and evaluating them. They have higher scores across all the metrics, which shows that it captured the patterns more effectively than the others. However, all of the models did face limitations to their performance due to the apparent class imbalance and the limited predictive strength of the features provided.
 
 ## Possible Follow-Up Actions
-
-- Improve class imbalance handling
 
 - Collect additional predictive features
 
