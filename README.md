@@ -26,6 +26,7 @@ This project focuses on the deployment of an end-to-end machine learning pipelin
 
 Step 1: Clone repositary from Git hub using this "gh repo clone srishti06m-cmyk/EGT309_PROJ1" command in VS code terminal
 Step 2: Open the project locally using this "code EGT309_PROJ1" command in the VS code terminal
+Step 2(a): If running from a fresh device, ensure that Python and pip are installed on your code editor, then install the requirements under "requirements.txt". "pip install -r requirements.txt" can help.
 Step 3: Run the kedro pipeline using "kedro run" in the VS code terminal
 
 - Method 2: Running the DockerFile
